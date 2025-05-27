@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Android Project 2025</string>
+    <string name="pattern_datetime_full">yyyy년 MM월 dd일 HH시 mm분 ss초</string>
+    <string name="pattern_datetime_short">yyyy년 MM월 dd일</string>
+    <string name="main_tab_search">검색</string>
+    <string name="main_tab_favorite">즐겨찾기</string>
+    <string name="search_hint_text">Input</string>
+    <string name="search_end_text">마지막</string>
+</resources>
