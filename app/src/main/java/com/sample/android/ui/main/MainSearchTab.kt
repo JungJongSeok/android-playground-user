@@ -149,6 +149,14 @@ fun SearchTab(
                                     color = ColorBlackE6,
                                     thickness = 1.dp
                                 )
+                                if (index == searches.size - 1) {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth().height(100.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(color = ColorBlack22)
+                                    }
+                                }
                             }
                         }
 
