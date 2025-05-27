@@ -21,4 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Android Project 2025"
 include(":app")
- 
+include(":network")
+include(":data")
