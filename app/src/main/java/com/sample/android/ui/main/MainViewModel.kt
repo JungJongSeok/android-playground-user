@@ -46,7 +46,7 @@ class MainViewModel(
     private val _detailActivity = MutableSharedFlow<Pair<List<UserUiData>, Int>>()
     val detailActivity = _detailActivity.asSharedFlow()
 
-    var query = ""
+    private var _query = ""
     private var _currentPage = 1
     private var _isEnd = false
 
@@ -107,7 +107,7 @@ class MainViewModel(
         }
     }
 
-    fun searchMore(query: String) {
+    fun searchMore(query: String = _query) {
         if (_isEnd) {
             return
         }
@@ -130,6 +130,7 @@ class MainViewModel(
                 if (searchLock.getAndSet(true)) {
                     return@coroutineScope
                 }
+                _query = query
                 val response = searchRepository.searchItem(UserRequest(query, currentPosition))
                 _currentPage = currentPosition + 1
                 _isEnd = response.users.isEmpty()

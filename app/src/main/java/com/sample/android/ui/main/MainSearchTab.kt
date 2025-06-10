@@ -72,11 +72,10 @@ fun SearchTab(
     viewModel: MainViewModel,
     searches: List<SearchTabData>,
     listState: LazyListState,
-    query: String,
-    onValueChange: (String) -> Unit
 ) {
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         viewModel.loading
@@ -87,14 +86,77 @@ fun SearchTab(
 
     Column(modifier = Modifier.fillMaxSize()) {
         Spacer(modifier = Modifier.height(20.dp))
-        SearchBar(
-            value = query,
-            onValueChange = { text ->
-                onValueChange.invoke(text)
-                viewModel.search(text)
-            },
-            hintText = context.getString(R.string.search_hint_text)
-        )
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .height(54.dp)
+                .background(
+                    color = ColorBlackF7,
+                    shape = RoundedCornerShape(14.dp)
+                )
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                Spacer(modifier = Modifier.width(20.dp))
+                Icon(
+                    painter = painterResource(R.drawable.icon_search),
+                    contentDescription = "search bar delete",
+                    tint = Color.Unspecified,
+                    modifier = Modifier.size(24.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Box(modifier = Modifier.weight(1f)) {
+                    BasicTextField(
+                        value = query,
+                        onValueChange = { text ->
+                            query = text
+                            viewModel.search(text)
+                        },
+                        singleLine = true,
+                        textStyle = LocalTextStyle.current.copy(
+                            color = ColorBlack22,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Normal,
+                        ),
+                        cursorBrush = SolidColor(ColorBlack22),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { inner ->
+                        if (query.isEmpty()) {
+                            Text(
+                                text = context.getString(R.string.search_hint_text),
+                                color = ColorBlack88,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Normal,
+                            )
+                        }
+                        inner()
+                    }
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                if (query.isNotEmpty()) {
+                    Icon(
+                        painter = painterResource(R.drawable.icon_delete),
+                        contentDescription = "search bar delete",
+                        tint = Color.Unspecified,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {
+                                    query = ""
+                                    viewModel.search("")
+                                },
+                            ),
+                    )
+                }
+                Spacer(modifier = Modifier.width(18.dp))
+            }
+        }
         Spacer(modifier = Modifier.height(20.dp))
 
         Box(modifier = Modifier.weight(1f)) {
@@ -276,80 +338,6 @@ fun SearchListItem(
     }
 }
 
-@Composable
-fun SearchBar(
-    value: String,
-    onValueChange: (String) -> Unit,
-    hintText: String = ""
-) {
-    Box(
-        modifier = Modifier
-            .padding(horizontal = 12.dp)
-            .height(54.dp)
-            .background(
-                color = ColorBlackF7,
-                shape = RoundedCornerShape(14.dp)
-            )
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            Spacer(modifier = Modifier.width(20.dp))
-            Icon(
-                painter = painterResource(R.drawable.icon_search),
-                contentDescription = "search bar delete",
-                tint = Color.Unspecified,
-                modifier = Modifier.size(24.dp),
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Box(modifier = Modifier.weight(1f)) {
-                BasicTextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    singleLine = true,
-                    textStyle = LocalTextStyle.current.copy(
-                        color = ColorBlack22,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Normal,
-                    ),
-                    cursorBrush = SolidColor(ColorBlack22),
-                    modifier = Modifier.fillMaxWidth()
-                ) { inner ->
-                    if (value.isEmpty()) {
-                        Text(
-                            text = hintText,
-                            color = ColorBlack88,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Normal,
-                        )
-                    }
-                    inner()
-                }
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            if (value.isNotEmpty()) {
-                Icon(
-                    painter = painterResource(R.drawable.icon_delete),
-                    contentDescription = "search bar delete",
-                    tint = Color.Unspecified,
-                    modifier = Modifier
-                        .size(18.dp)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = { onValueChange("") },
-                        ),
-                )
-            }
-            Spacer(modifier = Modifier.width(18.dp))
-        }
-    }
-}
-
-
 @Preview(showBackground = true)
 @Composable
 fun MainSearchTabPreview() {
@@ -360,9 +348,7 @@ fun MainSearchTabPreview() {
                 FavoriteRepositoryImpl(preferencesModule = PreferencesModuleImpl(LocalContext.current))
             ),
             listState = LazyListState(),
-            query = "",
             searches = emptyList(),
-            onValueChange = {}
         )
     }
 }

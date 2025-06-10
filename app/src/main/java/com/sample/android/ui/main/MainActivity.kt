@@ -112,7 +112,6 @@ class MainActivity : BaseComponentActivity() {
 fun SearchTabs(viewModel: MainViewModel) {
     val context = LocalContext.current
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    var query by remember { mutableStateOf("") }
     val searches by viewModel.searches.collectAsState()
     val favorites by viewModel.favorites.collectAsState()
     val searchListState = rememberSaveable(saver = LazyListState.Saver) {
@@ -145,7 +144,7 @@ fun SearchTabs(viewModel: MainViewModel) {
             lastVisible to totalItems
         }.collect { (lastVisible, total) ->
             if (lastVisible != null && lastVisible >= total - 1) {
-                viewModel.searchMore(query)
+                viewModel.searchMore()
             }
         }
     }
@@ -207,8 +206,7 @@ fun SearchTabs(viewModel: MainViewModel) {
                 viewModel,
                 searches,
                 searchListState,
-                query,
-                onValueChange = { query = it })
+            )
 
             1 -> FavoritesTab(viewModel, favorites, favoriteGridState)
         }
