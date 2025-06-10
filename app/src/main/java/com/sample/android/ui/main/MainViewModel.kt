@@ -14,14 +14,15 @@ import com.sample.android.ui.data.like
 import com.sample.android.ui.data.removeUiData
 import com.sample.android.ui.data.unlike
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
 
 class MainViewModel(
@@ -125,10 +126,10 @@ class MainViewModel(
 
     private val searchLock = AtomicBoolean(false)
     private suspend fun paging(query: String, currentPosition: Int) {
-        coroutineScope {
+        withContext(Dispatchers.Unconfined) {
             try {
                 if (searchLock.getAndSet(true)) {
-                    return@coroutineScope
+                    return@withContext
                 }
                 _query = query
                 val response = searchRepository.searchItem(UserRequest(query, currentPosition))

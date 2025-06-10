@@ -4,7 +4,8 @@ import com.sample.android.data.UserMetaDataList
 import com.sample.android.data.toData
 import com.sample.android.network.UserService
 import com.sample.android.network.request.UserRequest
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 interface SearchRepository {
     suspend fun searchItem(userRequest: UserRequest): UserMetaDataList
@@ -12,10 +13,10 @@ interface SearchRepository {
 
 class SearchRepositoryImpl(private val userService: UserService) : SearchRepository {
     override suspend fun searchItem(userRequest: UserRequest): UserMetaDataList {
-        return coroutineScope {
+        return withContext(Dispatchers.Unconfined) {
             val response = userService.search(userRequest)
             val data = response.results?.map { it.toData() } ?: emptyList()
-            return@coroutineScope UserMetaDataList(data)
+            return@withContext UserMetaDataList(data)
         }
     }
 }
