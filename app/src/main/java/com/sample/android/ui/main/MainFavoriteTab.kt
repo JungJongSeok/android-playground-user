@@ -55,8 +55,7 @@ import com.sample.android.utils.PreferencesModuleImpl
 
 
 @Composable
-fun FavoritesTab(viewModel: MainViewModel, gridState: LazyGridState) {
-    val favorites by viewModel.favorites.collectAsState()
+fun FavoritesTab(viewModel: MainViewModel, favorites: List<UserUiData>, gridState: LazyGridState) {
     LazyVerticalGrid(
         state = gridState,
         columns = GridCells.Fixed(2),
@@ -174,6 +173,7 @@ fun MainFavoriteTabPreview() {
                 FavoriteRepositoryImpl(preferencesModule = PreferencesModuleImpl(LocalContext.current))
             ),
             gridState = LazyGridState(),
+            favorites = emptyList()
         )
     }
 }

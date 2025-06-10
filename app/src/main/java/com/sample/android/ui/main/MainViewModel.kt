@@ -14,14 +14,15 @@ import com.sample.android.ui.data.like
 import com.sample.android.ui.data.removeUiData
 import com.sample.android.ui.data.unlike
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
 
 class MainViewModel(
@@ -46,8 +47,9 @@ class MainViewModel(
     private val _detailActivity = MutableSharedFlow<Pair<List<UserUiData>, Int>>()
     val detailActivity = _detailActivity.asSharedFlow()
 
-    private val _currentPage = MutableStateFlow(1)
-    private val _isEnd = MutableStateFlow(false)
+    private var _query = ""
+    private var _currentPage = 1
+    private var _isEnd = false
 
     fun initialize() {
         viewModelScope.launch {
@@ -106,15 +108,15 @@ class MainViewModel(
         }
     }
 
-    fun searchMore(query: String) {
-        if (_isEnd.value) {
+    fun searchMore(query: String = _query) {
+        if (_isEnd) {
             return
         }
         searchJob = viewModelScope.launch {
             if (query.isBlank()) {
                 return@launch
             }
-            paging(query, _currentPage.value)
+            paging(query, _currentPage)
         }
     }
 
@@ -124,14 +126,15 @@ class MainViewModel(
 
     private val searchLock = AtomicBoolean(false)
     private suspend fun paging(query: String, currentPosition: Int) {
-        coroutineScope {
+        withContext(Dispatchers.Unconfined) {
             try {
                 if (searchLock.getAndSet(true)) {
-                    return@coroutineScope
+                    return@withContext
                 }
+                _query = query
                 val response = searchRepository.searchItem(UserRequest(query, currentPosition))
-                _currentPage.emit(currentPosition + 1)
-                _isEnd.emit(response.users.isEmpty())
+                _currentPage = currentPosition + 1
+                _isEnd = response.users.isEmpty()
                 val favoriteSet = favorites.value.map { it.data }.toSet()
                 val list = response.users.map { data ->
                     UserUiData(favoriteSet.contains(data), data)

@@ -30,11 +30,9 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,7 +41,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,14 +48,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.flowWithLifecycle
 import com.bumptech.glide.Glide
 import com.sample.android.R
 import com.sample.android.network.UserServiceImpl
 import com.sample.android.repository.FavoriteRepositoryImpl
 import com.sample.android.repository.SearchRepositoryImpl
 import com.sample.android.ui.data.SearchTabBorder
+import com.sample.android.ui.data.SearchTabData
 import com.sample.android.ui.data.SearchTabMetaData
 import com.sample.android.ui.data.UserUiData
 import com.sample.android.ui.extension.setTimeText
@@ -74,18 +70,15 @@ import com.sample.android.utils.PreferencesModuleImpl
 @Composable
 fun SearchTab(
     viewModel: MainViewModel,
+    searches: List<SearchTabData>,
     listState: LazyListState,
-    query: String,
-    onValueChange: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val searches by viewModel.searches.collectAsState()
     var isLoading by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
 
-    LaunchedEffect(lifecycleOwner) {
+    LaunchedEffect(Unit) {
         viewModel.loading
-            .flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
             .collect {
                 isLoading = it
             }
@@ -93,14 +86,77 @@ fun SearchTab(
 
     Column(modifier = Modifier.fillMaxSize()) {
         Spacer(modifier = Modifier.height(20.dp))
-        SearchBar(
-            value = query,
-            onValueChange = { text ->
-                onValueChange.invoke(text)
-                viewModel.search(text)
-            },
-            hintText = context.getString(R.string.search_hint_text)
-        )
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .height(54.dp)
+                .background(
+                    color = ColorBlackF7,
+                    shape = RoundedCornerShape(14.dp)
+                )
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                Spacer(modifier = Modifier.width(20.dp))
+                Icon(
+                    painter = painterResource(R.drawable.icon_search),
+                    contentDescription = "search bar delete",
+                    tint = Color.Unspecified,
+                    modifier = Modifier.size(24.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Box(modifier = Modifier.weight(1f)) {
+                    BasicTextField(
+                        value = query,
+                        onValueChange = { text ->
+                            query = text
+                            viewModel.search(text)
+                        },
+                        singleLine = true,
+                        textStyle = LocalTextStyle.current.copy(
+                            color = ColorBlack22,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Normal,
+                        ),
+                        cursorBrush = SolidColor(ColorBlack22),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { inner ->
+                        if (query.isEmpty()) {
+                            Text(
+                                text = context.getString(R.string.search_hint_text),
+                                color = ColorBlack88,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Normal,
+                            )
+                        }
+                        inner()
+                    }
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                if (query.isNotEmpty()) {
+                    Icon(
+                        painter = painterResource(R.drawable.icon_delete),
+                        contentDescription = "search bar delete",
+                        tint = Color.Unspecified,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {
+                                    query = ""
+                                    viewModel.search("")
+                                },
+                            ),
+                    )
+                }
+                Spacer(modifier = Modifier.width(18.dp))
+            }
+        }
         Spacer(modifier = Modifier.height(20.dp))
 
         Box(modifier = Modifier.weight(1f)) {
@@ -282,85 +338,9 @@ fun SearchListItem(
     }
 }
 
-@Composable
-fun SearchBar(
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    hintText: String = ""
-) {
-    Box(
-        modifier = modifier
-            .padding(horizontal = 12.dp)
-            .height(54.dp)
-            .background(
-                color = ColorBlackF7,
-                shape = RoundedCornerShape(14.dp)
-            )
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            Spacer(modifier = Modifier.width(20.dp))
-            Icon(
-                painter = painterResource(R.drawable.icon_search),
-                contentDescription = "search bar delete",
-                tint = Color.Unspecified,
-                modifier = Modifier.size(24.dp),
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Box(modifier = Modifier.weight(1f)) {
-                BasicTextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    singleLine = true,
-                    textStyle = LocalTextStyle.current.copy(
-                        color = ColorBlack22,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Normal,
-                    ),
-                    cursorBrush = SolidColor(ColorBlack22),
-                    modifier = Modifier.fillMaxWidth()
-                ) { inner ->
-                    if (value.isEmpty()) {
-                        Text(
-                            text = hintText,
-                            color = ColorBlack88,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Normal,
-                        )
-                    }
-                    inner()
-                }
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            if (value.isNotEmpty()) {
-                Icon(
-                    painter = painterResource(R.drawable.icon_delete),
-                    contentDescription = "search bar delete",
-                    tint = Color.Unspecified,
-                    modifier = Modifier
-                        .size(18.dp)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = { onValueChange("") },
-                        ),
-                )
-            }
-            Spacer(modifier = Modifier.width(18.dp))
-        }
-    }
-}
-
-
 @Preview(showBackground = true)
 @Composable
 fun MainSearchTabPreview() {
-    var query by rememberSaveable { mutableStateOf("") }
     CommonTheme {
         SearchTab(
             MainViewModel(
@@ -368,8 +348,7 @@ fun MainSearchTabPreview() {
                 FavoriteRepositoryImpl(preferencesModule = PreferencesModuleImpl(LocalContext.current))
             ),
             listState = LazyListState(),
-            query = "",
-            onValueChange = {}
+            searches = emptyList(),
         )
     }
 }
