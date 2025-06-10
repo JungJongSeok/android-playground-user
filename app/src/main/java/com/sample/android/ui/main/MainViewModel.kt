@@ -46,8 +46,9 @@ class MainViewModel(
     private val _detailActivity = MutableSharedFlow<Pair<List<UserUiData>, Int>>()
     val detailActivity = _detailActivity.asSharedFlow()
 
-    private val _currentPage = MutableStateFlow(1)
-    private val _isEnd = MutableStateFlow(false)
+    var query = ""
+    private var _currentPage = 1
+    private var _isEnd = false
 
     fun initialize() {
         viewModelScope.launch {
@@ -107,14 +108,14 @@ class MainViewModel(
     }
 
     fun searchMore(query: String) {
-        if (_isEnd.value) {
+        if (_isEnd) {
             return
         }
         searchJob = viewModelScope.launch {
             if (query.isBlank()) {
                 return@launch
             }
-            paging(query, _currentPage.value)
+            paging(query, _currentPage)
         }
     }
 
@@ -130,8 +131,8 @@ class MainViewModel(
                     return@coroutineScope
                 }
                 val response = searchRepository.searchItem(UserRequest(query, currentPosition))
-                _currentPage.emit(currentPosition + 1)
-                _isEnd.emit(response.users.isEmpty())
+                _currentPage = currentPosition + 1
+                _isEnd = response.users.isEmpty()
                 val favoriteSet = favorites.value.map { it.data }.toSet()
                 val list = response.users.map { data ->
                     UserUiData(favoriteSet.contains(data), data)

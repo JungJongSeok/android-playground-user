@@ -23,9 +23,11 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -33,13 +35,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.initializer
@@ -111,9 +111,10 @@ class MainActivity : BaseComponentActivity() {
 @Composable
 fun SearchTabs(viewModel: MainViewModel) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    var query by rememberSaveable { mutableStateOf("") }
+    var query by remember { mutableStateOf("") }
+    val searches by viewModel.searches.collectAsState()
+    val favorites by viewModel.favorites.collectAsState()
     val searchListState = rememberSaveable(saver = LazyListState.Saver) {
         LazyListState()
     }
@@ -124,9 +125,8 @@ fun SearchTabs(viewModel: MainViewModel) {
         context.getString(R.string.main_tab_search),
         context.getString(R.string.main_tab_favorite)
     )
-    LaunchedEffect(lifecycleOwner) {
+    LaunchedEffect(Unit) {
         viewModel.error
-            .flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
             .collect {
                 if (it is NetworkCommonException) {
                     val message = it.message ?: it.code.toString()
@@ -150,9 +150,8 @@ fun SearchTabs(viewModel: MainViewModel) {
         }
     }
 
-    LaunchedEffect(lifecycleOwner) {
+    LaunchedEffect(Unit) {
         viewModel.scrollToTop
-            .flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
             .collect {
                 searchListState.scrollToItem(0, 0)
             }
@@ -204,8 +203,14 @@ fun SearchTabs(viewModel: MainViewModel) {
             }
         }
         when (selectedTab) {
-            0 -> SearchTab(viewModel, searchListState, query, onValueChange = { query = it })
-            1 -> FavoritesTab(viewModel, favoriteGridState)
+            0 -> SearchTab(
+                viewModel,
+                searches,
+                searchListState,
+                query,
+                onValueChange = { query = it })
+
+            1 -> FavoritesTab(viewModel, favorites, favoriteGridState)
         }
     }
 }
