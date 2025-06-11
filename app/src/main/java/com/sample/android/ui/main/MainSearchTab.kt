@@ -1,7 +1,6 @@
 package com.sample.android.ui.main
 
 import android.graphics.drawable.ColorDrawable
-import android.widget.ImageView
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,18 +28,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -48,12 +43,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import com.bumptech.glide.Glide
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.placeholder
 import com.sample.android.R
-import com.sample.android.network.UserServiceImpl
-import com.sample.android.repository.FavoriteRepositoryImpl
-import com.sample.android.repository.SearchRepositoryImpl
 import com.sample.android.ui.data.SearchTabBorder
 import com.sample.android.ui.data.SearchTabData
 import com.sample.android.ui.data.SearchTabMetaData
@@ -65,7 +58,6 @@ import com.sample.android.ui.theme.ColorBlack88
 import com.sample.android.ui.theme.ColorBlackE6
 import com.sample.android.ui.theme.ColorBlackF7
 import com.sample.android.ui.theme.CommonTheme
-import com.sample.android.utils.PreferencesModuleImpl
 
 
 @Composable
@@ -235,6 +227,7 @@ fun SearchTab(
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun SearchListItem(
     item: UserUiData,
@@ -261,19 +254,12 @@ fun SearchListItem(
                 )
                 .clip(RoundedCornerShape(14.0.dp))
         ) {
-            AndroidView(
-                factory = { context ->
-                    ImageView(context).apply {
-                        scaleType = ImageView.ScaleType.CENTER_CROP
-                    }
-                },
+            GlideImage(
+                model = item.data.thumbnail,
+                contentDescription = "thumbnail",
+                loading = placeholder(ColorDrawable(ColorBlackE6.toArgb())),
                 modifier = Modifier.fillMaxSize(),
-                update = { imageView ->
-                    Glide.with(imageView.context)
-                        .load(item.data.thumbnail ?: return@AndroidView)
-                        .placeholder(ColorDrawable(ColorBlackE6.toArgb()))
-                        .into(imageView)
-                }
+                contentScale = ContentScale.Crop
             )
             Box(
                 modifier = Modifier

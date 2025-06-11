@@ -1,8 +1,8 @@
 package com.sample.android.ui.main
 
 
-import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.compose.setContent
@@ -75,15 +75,16 @@ class MainActivity : BaseComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CommonTheme {
-                SearchTabs(viewModel)
+                SearchTabs(viewModel) { intent ->
+                    startDetailActivity(intent)
+                }
             }
         }
 
         viewModel.initialize()
     }
 
-    private fun startDetailActivity(context: Context, list: List<UserUiData>, position: Int = 0) {
-        val intent = DetailActivity.intent(context, list, position)
+    private fun startDetailActivity(intent: Intent) {
         activityResultRegistry
             .register(
                 KEY_DETAIL_ACTIVITY_RESULT,
@@ -97,7 +98,10 @@ class MainActivity : BaseComponentActivity() {
 }
 
 @Composable
-fun SearchTabs(viewModel: MainViewModel) {
+fun SearchTabs(
+    viewModel: MainViewModel,
+    startDetailActivity: (Intent) -> Unit
+) {
     val context = LocalContext.current
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     var query by rememberSaveable { mutableStateOf("") }
@@ -218,8 +222,8 @@ fun SearchTabs(viewModel: MainViewModel) {
                     viewModel.removeFavoriteData(it)
                 },
                 startDetailActivity = { list ->
-                    val activity = context as Activity
-                    activity.startActivity(DetailActivity.intent(activity, list))
+                    val intent = DetailActivity.intent(context, list)
+                    startDetailActivity.invoke(intent)
                 },
             )
 
@@ -228,8 +232,8 @@ fun SearchTabs(viewModel: MainViewModel) {
                 gridState = favoriteGridState,
                 removeFavoriteTask = { viewModel.removeFavoriteData(it) },
                 startDetailActivity = { list, position ->
-                    val activity = context as Activity
-                    activity.startActivity(DetailActivity.intent(activity, list, position))
+                    val intent = DetailActivity.intent(context, list, position)
+                    startDetailActivity.invoke(intent)
                 },
             )
         }
@@ -244,7 +248,8 @@ fun MainPreview() {
             MainViewModel(
                 SearchRepositoryImpl(userService = UserServiceImpl()),
                 FavoriteRepositoryImpl(preferencesModule = PreferencesModuleImpl(LocalContext.current))
-            )
+            ),
+            startDetailActivity = {}
         )
     }
 }
