@@ -33,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,8 +75,8 @@ fun SearchTab(
     listState: LazyListState,
 ) {
     val context = LocalContext.current
-    var isLoading by remember { mutableStateOf(false) }
-    var query by remember { mutableStateOf("") }
+    var isLoading by rememberSaveable { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         viewModel.loading
