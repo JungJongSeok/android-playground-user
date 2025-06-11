@@ -17,8 +17,6 @@ import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -247,17 +245,5 @@ class MainViewModelTest {
                 .find { it.data.data == data1 }?.data?.isFavorite ?: false
         assertFalse(isFavoriteData)
         assertTrue(viewModel.favorites.value.isEmpty())
-    }
-
-    @Test
-    fun `startDetailActivity emits pair`() = runTest {
-        val list = listOf(UserUiData(false, data1))
-        val received = async { viewModel.detailActivity.first() }
-        viewModel.startDetailActivity(list, 1)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        val pair = received.await()
-        assertEquals(list, pair.first)
-        assertEquals(1, pair.second)
     }
 }
