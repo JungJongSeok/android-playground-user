@@ -1,6 +1,7 @@
 package com.sample.android.ui.main
 
 
+import android.app.Activity
 import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
@@ -27,7 +28,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -39,9 +39,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.sample.android.R
@@ -57,7 +54,6 @@ import com.sample.android.ui.theme.ColorBlack88
 import com.sample.android.ui.theme.ColorBlackDD
 import com.sample.android.ui.theme.CommonTheme
 import com.sample.android.utils.PreferencesModuleImpl
-import kotlinx.coroutines.launch
 
 class MainActivity : BaseComponentActivity() {
     companion object {
@@ -83,14 +79,6 @@ class MainActivity : BaseComponentActivity() {
             }
         }
 
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.detailActivity.collect { (list, position) ->
-                    startDetailActivity(this@MainActivity, list, position)
-                }
-            }
-        }
-
         viewModel.initialize()
     }
 
@@ -112,6 +100,7 @@ class MainActivity : BaseComponentActivity() {
 fun SearchTabs(viewModel: MainViewModel) {
     val context = LocalContext.current
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var query by rememberSaveable { mutableStateOf("") }
     val searches by viewModel.searches.collectAsState()
     val favorites by viewModel.favorites.collectAsState()
     val searchListState = rememberSaveable(saver = LazyListState.Saver) {
@@ -124,6 +113,8 @@ fun SearchTabs(viewModel: MainViewModel) {
         context.getString(R.string.main_tab_search),
         context.getString(R.string.main_tab_favorite)
     )
+    var isLoading by rememberSaveable { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         viewModel.error
             .collect {
@@ -153,6 +144,13 @@ fun SearchTabs(viewModel: MainViewModel) {
         viewModel.scrollToTop
             .collect {
                 searchListState.scrollToItem(0, 0)
+            }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.loading
+            .collect {
+                isLoading = it
             }
     }
 
@@ -203,12 +201,37 @@ fun SearchTabs(viewModel: MainViewModel) {
         }
         when (selectedTab) {
             0 -> SearchTab(
-                viewModel,
-                searches,
-                searchListState,
+                query = query,
+                searches = searches,
+                listState = searchListState,
+                isLoading = isLoading,
+                searchTask = { text ->
+                    viewModel.search(text)
+                },
+                onValueChangeTask = { text ->
+                    query = text
+                },
+                addFavoriteTask = {
+                    viewModel.addFavoriteData(it)
+                },
+                removeFavoriteTask = {
+                    viewModel.removeFavoriteData(it)
+                },
+                startDetailActivity = { list ->
+                    val activity = context as Activity
+                    activity.startActivity(DetailActivity.intent(activity, list))
+                },
             )
 
-            1 -> FavoritesTab(viewModel, favorites, favoriteGridState)
+            1 -> FavoritesTab(
+                favorites = favorites,
+                gridState = favoriteGridState,
+                removeFavoriteTask = { viewModel.removeFavoriteData(it) },
+                startDetailActivity = { list, position ->
+                    val activity = context as Activity
+                    activity.startActivity(DetailActivity.intent(activity, list, position))
+                },
+            )
         }
     }
 }

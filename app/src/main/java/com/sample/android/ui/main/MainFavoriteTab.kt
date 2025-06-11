@@ -55,7 +55,12 @@ import com.sample.android.utils.PreferencesModuleImpl
 
 
 @Composable
-fun FavoritesTab(viewModel: MainViewModel, favorites: List<UserUiData>, gridState: LazyGridState) {
+fun FavoritesTab(
+    favorites: List<UserUiData>,
+    gridState: LazyGridState,
+    removeFavoriteTask: (UserUiData) -> Unit,
+    startDetailActivity: (List<UserUiData>, Int) -> Unit
+) {
     LazyVerticalGrid(
         state = gridState,
         columns = GridCells.Fixed(2),
@@ -69,12 +74,12 @@ fun FavoritesTab(viewModel: MainViewModel, favorites: List<UserUiData>, gridStat
                 item = item,
                 onFavoriteToggle = { data ->
                     if (data.isFavorite) {
-                        viewModel.removeFavoriteData(data)
+                        removeFavoriteTask.invoke(data)
                     }
                 },
                 onClick = { data ->
                     val position = maxOf(favorites.indexOfFirst { it == data }, 0)
-                    viewModel.startDetailActivity(favorites, position)
+                    startDetailActivity.invoke(favorites, position)
                 }
             )
         }
@@ -168,12 +173,10 @@ fun FavoriteItemRow(
 fun MainFavoriteTabPreview() {
     CommonTheme {
         FavoritesTab(
-            MainViewModel(
-                SearchRepositoryImpl(userService = UserServiceImpl()),
-                FavoriteRepositoryImpl(preferencesModule = PreferencesModuleImpl(LocalContext.current))
-            ),
             gridState = LazyGridState(),
-            favorites = emptyList()
+            favorites = emptyList(),
+            removeFavoriteTask = {},
+            startDetailActivity = { _, _ -> }
         )
     }
 }
