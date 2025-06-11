@@ -14,6 +14,7 @@ gson = "2.10.1"
 stetho = "1.6.0"
 profiler = "1.0.8"
 glide = "4.16.0"
+glideCompose = "1.0.0-beta01"
 composeBom = "2024.04.01"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
@@ -48,6 +49,7 @@ stetho-okhttp3 = { group = "com.facebook.stetho", name = "stetho-okhttp3", versi
 stetho-js-rhino = { group = "com.facebook.stetho", name = "stetho-js-rhino", version.ref = "stetho" }
 profiler = { group = "com.localebro", name = "okhttpprofiler", version.ref = "profiler" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+glide-compose = { group = "com.github.bumptech.glide", name = "compose", version.ref = "glideCompose" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
