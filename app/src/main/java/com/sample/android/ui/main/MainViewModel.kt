@@ -44,9 +44,6 @@ class MainViewModel(
     private val _error = MutableSharedFlow<Exception>()
     val error = _error.asSharedFlow()
 
-    private val _detailActivity = MutableSharedFlow<Pair<List<UserUiData>, Int>>()
-    val detailActivity = _detailActivity.asSharedFlow()
-
     private var _query = ""
     private var _currentPage = 1
     private var _isEnd = false
@@ -191,12 +188,6 @@ class MainViewModel(
             val favoriteList = favorites.value.removeUiData(userUiData)
             _favorites.emit(favoriteList)
             favoriteLock.set(false)
-        }
-    }
-
-    fun startDetailActivity(list: List<UserUiData>, position: Int = 0) {
-        viewModelScope.launch {
-            _detailActivity.emit(Pair(list, position))
         }
     }
 }

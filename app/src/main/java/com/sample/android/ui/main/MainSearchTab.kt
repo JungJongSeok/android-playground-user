@@ -70,20 +70,17 @@ import com.sample.android.utils.PreferencesModuleImpl
 
 @Composable
 fun SearchTab(
-    viewModel: MainViewModel,
+    query: String,
     searches: List<SearchTabData>,
     listState: LazyListState,
+    isLoading: Boolean,
+    searchTask: (String) -> Unit,
+    onValueChangeTask: (String) -> Unit,
+    addFavoriteTask: (UserUiData) -> Unit,
+    removeFavoriteTask: (UserUiData) -> Unit,
+    startDetailActivity: (List<UserUiData>) -> Unit
 ) {
     val context = LocalContext.current
-    var isLoading by rememberSaveable { mutableStateOf(false) }
-    var query by rememberSaveable { mutableStateOf("") }
-
-    LaunchedEffect(Unit) {
-        viewModel.loading
-            .collect {
-                isLoading = it
-            }
-    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Spacer(modifier = Modifier.height(20.dp))
@@ -114,8 +111,8 @@ fun SearchTab(
                     BasicTextField(
                         value = query,
                         onValueChange = { text ->
-                            query = text
-                            viewModel.search(text)
+                            onValueChangeTask.invoke(text)
+                            searchTask.invoke(text)
                         },
                         singleLine = true,
                         textStyle = LocalTextStyle.current.copy(
@@ -149,8 +146,8 @@ fun SearchTab(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
                                 onClick = {
-                                    query = ""
-                                    viewModel.search("")
+                                    onValueChangeTask.invoke("")
+                                    searchTask.invoke("")
                                 },
                             ),
                     )
@@ -171,16 +168,17 @@ fun SearchTab(
                             if (index == 0) {
                                 Spacer(modifier = Modifier.height(10.dp))
                             }
-                            SearchListItem(item.data,
+                            SearchListItem(
+                                item.data,
                                 onFavoriteToggle = {
                                     if (it.isFavorite) {
-                                        viewModel.removeFavoriteData(it)
+                                        removeFavoriteTask.invoke(it)
                                     } else {
-                                        viewModel.addFavoriteData(it)
+                                        addFavoriteTask.invoke(it)
                                     }
                                 },
                                 onClick = {
-                                    viewModel.startDetailActivity(listOf(it))
+                                    startDetailActivity.invoke(listOf(it))
                                 })
                         }
 
@@ -208,7 +206,9 @@ fun SearchTab(
                                 )
                                 if (index == searches.size - 1) {
                                     Box(
-                                        modifier = Modifier.fillMaxWidth().height(100.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(100.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         CircularProgressIndicator(color = ColorBlack22)
@@ -223,7 +223,9 @@ fun SearchTab(
             }
             if (isLoading) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(400.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(400.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(color = ColorBlack22)
@@ -344,12 +346,15 @@ fun SearchListItem(
 fun MainSearchTabPreview() {
     CommonTheme {
         SearchTab(
-            MainViewModel(
-                SearchRepositoryImpl(userService = UserServiceImpl()),
-                FavoriteRepositoryImpl(preferencesModule = PreferencesModuleImpl(LocalContext.current))
-            ),
-            listState = LazyListState(),
+            query = "",
             searches = emptyList(),
+            listState = LazyListState(),
+            isLoading = false,
+            searchTask = {},
+            onValueChangeTask = {},
+            addFavoriteTask = {},
+            removeFavoriteTask = {},
+            startDetailActivity = {}
         )
     }
 }
