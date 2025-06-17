@@ -1,7 +1,6 @@
 package com.sample.android.ui.main
 
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -47,7 +46,6 @@ import com.sample.android.network.UserServiceImpl
 import com.sample.android.repository.FavoriteRepositoryImpl
 import com.sample.android.repository.SearchRepositoryImpl
 import com.sample.android.ui.BaseComponentActivity
-import com.sample.android.ui.data.UserUiData
 import com.sample.android.ui.detail.DetailActivity
 import com.sample.android.ui.theme.ColorBlack22
 import com.sample.android.ui.theme.ColorBlack88
@@ -75,7 +73,7 @@ class MainActivity : BaseComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CommonTheme {
-                SearchTabs(viewModel) { intent ->
+                MainScreen(viewModel) { intent ->
                     startDetailActivity(intent)
                 }
             }
@@ -98,13 +96,11 @@ class MainActivity : BaseComponentActivity() {
 }
 
 @Composable
-fun SearchTabs(
+fun MainScreen(
     viewModel: MainViewModel,
     startDetailActivity: (Intent) -> Unit
 ) {
     val context = LocalContext.current
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    var query by rememberSaveable { mutableStateOf("") }
     val searches by viewModel.searches.collectAsState()
     val favorites by viewModel.favorites.collectAsState()
     val searchListState = rememberSaveable(saver = LazyListState.Saver) {
@@ -117,6 +113,8 @@ fun SearchTabs(
         context.getString(R.string.main_tab_search),
         context.getString(R.string.main_tab_favorite)
     )
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var query by rememberSaveable { mutableStateOf("") }
     var isLoading by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -244,7 +242,7 @@ fun SearchTabs(
 @Composable
 fun MainPreview() {
     CommonTheme {
-        SearchTabs(
+        MainScreen(
             MainViewModel(
                 SearchRepositoryImpl(userService = UserServiceImpl()),
                 FavoriteRepositoryImpl(preferencesModule = PreferencesModuleImpl(LocalContext.current))
