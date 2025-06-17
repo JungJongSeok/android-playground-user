@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -95,6 +96,11 @@ class MainActivity : BaseComponentActivity() {
     }
 }
 
+private enum class MainTab(val index: Int, @StringRes val titleRes: Int) {
+    SEARCH(0, R.string.main_tab_search),
+    FAVORITE(1, R.string.main_tab_favorite)
+}
+
 @Composable
 fun MainScreen(
     viewModel: MainViewModel,
@@ -109,11 +115,8 @@ fun MainScreen(
     val favoriteGridState = rememberSaveable(saver = LazyGridState.Saver) {
         LazyGridState()
     }
-    val tabs = listOf(
-        context.getString(R.string.main_tab_search),
-        context.getString(R.string.main_tab_favorite)
-    )
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    val tabs = listOf(MainTab.SEARCH, MainTab.FAVORITE)
+    var selectedTab by rememberSaveable { mutableIntStateOf(MainTab.SEARCH.index) }
     var query by rememberSaveable { mutableStateOf("") }
     var isLoading by rememberSaveable { mutableStateOf(false) }
 
@@ -176,7 +179,7 @@ fun MainScreen(
                 )
             },
         ) {
-            tabs.forEachIndexed { index, title ->
+            tabs.forEachIndexed { index, tabs ->
                 Tab(
                     modifier = Modifier.height(70.dp),
                     selectedContentColor = Color.White,
@@ -191,7 +194,7 @@ fun MainScreen(
                             contentAlignment = Alignment.BottomCenter
                         ) {
                             Text(
-                                text = title,
+                                text = context.getString(tabs.titleRes),
                                 fontSize = 16.sp,
                                 fontWeight = if (index == selectedTab) FontWeight.Bold else FontWeight.Normal,
                                 color = if (index == selectedTab) ColorBlack22 else ColorBlack88,
@@ -202,7 +205,7 @@ fun MainScreen(
             }
         }
         when (selectedTab) {
-            0 -> SearchTab(
+            MainTab.SEARCH.index -> SearchTab(
                 query = query,
                 searches = searches,
                 listState = searchListState,
@@ -225,7 +228,7 @@ fun MainScreen(
                 },
             )
 
-            1 -> FavoritesTab(
+            MainTab.FAVORITE.index -> FavoritesTab(
                 favorites = favorites,
                 gridState = favoriteGridState,
                 removeFavoriteTask = { viewModel.removeFavoriteData(it) },
