@@ -47,6 +47,7 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
 import com.sample.android.R
+import com.sample.android.data.UserMetaData
 import com.sample.android.ui.data.SearchTabBorder
 import com.sample.android.ui.data.SearchTabData
 import com.sample.android.ui.data.SearchTabMetaData
@@ -330,10 +331,46 @@ fun SearchListItem(
 @Preview(showBackground = true)
 @Composable
 fun MainSearchTabPreview() {
+    val data1 = SearchTabMetaData(
+        UserUiData(
+            isFavorite = true,
+            data = UserMetaData(
+                thumbnail = "thumbnail1",
+                title = "title1",
+                url = "http://example.com/1",
+                datetime = "2025-05-18T12:00:00.000+09:00"
+            )
+        )
+    )
+    val data2 = SearchTabMetaData(
+        UserUiData(
+            isFavorite = false,
+            data = UserMetaData(
+                thumbnail = "thumbnail2",
+                title = "title2",
+                url = "http://example.com/2",
+                datetime = "2025-05-18T13:00:00.000+09:00"
+            )
+        )
+    )
+    val data3 = SearchTabMetaData(
+        UserUiData(
+            isFavorite = true,
+            data = UserMetaData(
+                thumbnail = "thumbnail3",
+                title = "title3",
+                url = "http://example.com/3",
+                datetime = "2025-05-18T14:00:00.000+09:00"
+            )
+        )
+    )
+    val border1 = SearchTabBorder(text = "1", isEnd = false)
+    val border2 = SearchTabBorder(text = "2", isEnd = true)
+
     CommonTheme {
         SearchTab(
             query = "",
-            searches = emptyList(),
+            searches = listOf(data1, data2, border1, data3, border2),
             listState = LazyListState(),
             isLoading = false,
             searchTask = {},

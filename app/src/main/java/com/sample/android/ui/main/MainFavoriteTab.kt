@@ -42,6 +42,7 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
 import com.sample.android.R
+import com.sample.android.data.UserMetaData
 import com.sample.android.ui.data.UserUiData
 import com.sample.android.ui.extension.setTimeText
 import com.sample.android.ui.theme.ColorBlack88
@@ -160,10 +161,38 @@ fun FavoriteItemRow(
 @Preview(showBackground = true)
 @Composable
 fun MainFavoriteTabPreview() {
+    val data1 = UserUiData(
+        isFavorite = true,
+        data = UserMetaData(
+            thumbnail = "thumbnail1",
+            title = "title1",
+            url = "http://example.com/1",
+            datetime = "2025-05-18T12:00:00.000+09:00"
+        )
+    )
+    val data2 = UserUiData(
+        isFavorite = false,
+        data = UserMetaData(
+            thumbnail = "thumbnail2",
+            title = "title2",
+            url = "http://example.com/2",
+            datetime = "2025-05-18T13:00:00.000+09:00"
+        )
+    )
+    val data3 = UserUiData(
+        isFavorite = true,
+        data = UserMetaData(
+            thumbnail = "thumbnail3",
+            title = "title3",
+            url = "http://example.com/3",
+            datetime = "2025-05-18T14:00:00.000+09:00"
+        )
+    )
+
     CommonTheme {
         FavoritesTab(
             gridState = LazyGridState(),
-            favorites = emptyList(),
+            favorites = listOf(data1, data2, data3),
             removeFavoriteTask = {},
             startDetailActivity = { _, _ -> }
         )
