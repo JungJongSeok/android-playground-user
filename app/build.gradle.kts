@@ -124,13 +124,11 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.constraintlayout)
-    testImplementation(libs.testng)
 
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
     implementation(project(":data"))
-    implementation(project(":network"))
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
@@ -138,5 +136,4 @@ dependencies {
     testImplementation(libs.okhttp3.mockwebserver)
     testImplementation(libs.robolectric)
     testImplementation(project(":data"))
-    testImplementation(project(":network"))
 }

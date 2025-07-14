@@ -45,12 +45,12 @@ dependencies {
     implementation(libs.material)
     implementation(libs.gson)
 
-    implementation(project(":network"))
+    api(project(":network"))
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlin.coroutines.test)
     testImplementation(libs.okhttp3.mockwebserver)
     testImplementation(libs.robolectric)
-    testImplementation(project(":network"))
+    testApi(project(":network"))
 }
