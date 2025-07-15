@@ -1,9 +1,6 @@
-package com.sample.android.ui.main
+package com.sample.android.ui.feature.main.coponent
 
-import android.graphics.drawable.ColorDrawable
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -31,30 +28,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.placeholder
 import com.sample.android.R
 import com.sample.android.data.UserMetaData
-import com.sample.android.ui.data.SearchTabBorder
-import com.sample.android.ui.data.SearchTabData
-import com.sample.android.ui.data.SearchTabMetaData
-import com.sample.android.ui.data.UserUiData
-import com.sample.android.ui.extension.setTimeText
+import com.sample.android.ui.feature.main.model.SearchTabBorder
+import com.sample.android.ui.feature.main.model.SearchTabData
+import com.sample.android.ui.feature.main.model.SearchTabMetaData
+import com.sample.android.ui.feature.main.model.UserUiData
 import com.sample.android.ui.theme.ColorBlack22
-import com.sample.android.ui.theme.ColorBlack44
 import com.sample.android.ui.theme.ColorBlack88
 import com.sample.android.ui.theme.ColorBlackE6
 import com.sample.android.ui.theme.ColorBlackF7
@@ -161,7 +149,7 @@ fun SearchTab(
                             if (index == 0) {
                                 Spacer(modifier = Modifier.height(10.dp))
                             }
-                            SearchListItem(
+                            SearchItemRow(
                                 item.data,
                                 onFavoriteToggle = {
                                     if (it.isFavorite) {
@@ -228,109 +216,9 @@ fun SearchTab(
     }
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
-@Composable
-fun SearchListItem(
-    item: UserUiData,
-    onFavoriteToggle: (UserUiData) -> Unit,
-    onClick: (UserUiData) -> Unit
-) {
-    val context = LocalContext.current
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = { onClick(item) })
-    ) {
-        Spacer(modifier = Modifier.width(12.dp))
-        Box(
-            modifier = Modifier
-                .size(90.dp)
-                .align(Alignment.CenterVertically)
-                .border(
-                    border = BorderStroke(width = 1.dp, color = ColorBlackE6),
-                    shape = RoundedCornerShape(14.0.dp)
-                )
-                .clip(RoundedCornerShape(14.0.dp))
-        ) {
-            GlideImage(
-                model = item.data.thumbnail,
-                contentDescription = "thumbnail",
-                loading = placeholder(ColorDrawable(ColorBlackE6.toArgb())),
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .size(36.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { onFavoriteToggle(item) },
-                    )
-            ) {
-                Icon(
-                    painter = painterResource(
-                        id = if (item.isFavorite) {
-                            R.drawable.icon_like_on
-                        } else {
-                            R.drawable.icon_like_off
-                        }
-                    ),
-                    contentDescription = "favorite like button",
-                    modifier = Modifier
-                        .align(alignment = Alignment.Center)
-                        .size(22.dp),
-                    tint = Color.Unspecified
-                )
-            }
-        }
-        Spacer(modifier = Modifier.width(10.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    modifier = Modifier.weight(1f),
-                    text = item.data.title ?: "",
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = Color.Black
-                )
-            }
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = item.data.url ?: "",
-                minLines = 2,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                fontWeight = FontWeight.Normal,
-                fontSize = 13.sp,
-                lineHeight = 16.sp,
-                color = ColorBlack44,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = item.data.timestamp.setTimeText(context, R.string.pattern_datetime_full),
-                fontWeight = FontWeight.Normal,
-                fontSize = 12.sp,
-                color = ColorBlack88,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
-fun MainSearchTabPreview() {
+fun SearchTabPreview() {
     val data1 = SearchTabMetaData(
         UserUiData(
             isFavorite = true,

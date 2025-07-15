@@ -1,18 +1,19 @@
-package com.sample.android.ui.main
+package com.sample.android.ui.feature.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sample.android.network.request.UserRequest
 import com.sample.android.repository.FavoriteRepository
 import com.sample.android.repository.SearchRepository
-import com.sample.android.ui.data.SearchTabBorder
-import com.sample.android.ui.data.SearchTabData
-import com.sample.android.ui.data.SearchTabMetaData
-import com.sample.android.ui.data.UserUiData
-import com.sample.android.ui.data.addUiData
-import com.sample.android.ui.data.like
-import com.sample.android.ui.data.removeUiData
-import com.sample.android.ui.data.unlike
+import com.sample.android.ui.feature.main.model.SearchTabBorder
+import com.sample.android.ui.feature.main.model.SearchTabData
+import com.sample.android.ui.feature.main.model.SearchTabMetaData
+import com.sample.android.ui.feature.main.model.UserUiData
+import com.sample.android.ui.feature.main.model.addUiData
+import com.sample.android.ui.feature.main.model.like
+import com.sample.android.ui.feature.main.model.removeUiData
+import com.sample.android.ui.feature.main.model.unlike
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,8 +25,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.inject.Inject
 
-class MainViewModel(
+@HiltViewModel
+class MainViewModel @Inject constructor(
     private val searchRepository: SearchRepository,
     private val favoriteRepository: FavoriteRepository
 ) : ViewModel() {

@@ -1,6 +1,11 @@
 package com.sample.android.ui.data
 
 import com.sample.android.data.UserMetaData
+import com.sample.android.ui.feature.main.model.UserUiData
+import com.sample.android.ui.feature.main.model.addUiData
+import com.sample.android.ui.feature.main.model.like
+import com.sample.android.ui.feature.main.model.removeUiData
+import com.sample.android.ui.feature.main.model.unlike
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue

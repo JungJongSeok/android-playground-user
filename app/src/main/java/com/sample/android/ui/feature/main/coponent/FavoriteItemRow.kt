@@ -1,14 +1,12 @@
-package com.sample.android.ui.main
+package com.sample.android.ui.feature.main.coponent
 
 import android.graphics.drawable.ColorDrawable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -16,10 +14,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -43,44 +37,11 @@ import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
 import com.sample.android.R
 import com.sample.android.data.UserMetaData
-import com.sample.android.ui.data.UserUiData
 import com.sample.android.ui.extension.setTimeText
+import com.sample.android.ui.feature.main.model.UserUiData
 import com.sample.android.ui.theme.ColorBlack88
 import com.sample.android.ui.theme.ColorBlackE6
-import com.sample.android.ui.theme.CommonTheme
 
-
-@Composable
-fun FavoritesTab(
-    favorites: List<UserUiData>,
-    gridState: LazyGridState,
-    removeFavoriteTask: (UserUiData) -> Unit,
-    startDetailActivity: (List<UserUiData>, Int) -> Unit
-) {
-    LazyVerticalGrid(
-        state = gridState,
-        columns = GridCells.Fixed(2),
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 30.dp, vertical = 40.dp),
-        horizontalArrangement = Arrangement.spacedBy(15.dp),
-        verticalArrangement = Arrangement.spacedBy(15.dp)
-    ) {
-        itemsIndexed(favorites) { _, item ->
-            FavoriteItemRow(
-                item = item,
-                onFavoriteToggle = { data ->
-                    if (data.isFavorite) {
-                        removeFavoriteTask.invoke(data)
-                    }
-                },
-                onClick = { data ->
-                    val position = maxOf(favorites.indexOfFirst { it == data }, 0)
-                    startDetailActivity.invoke(favorites, position)
-                }
-            )
-        }
-    }
-}
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -160,41 +121,21 @@ fun FavoriteItemRow(
 
 @Preview(showBackground = true)
 @Composable
-fun MainFavoriteTabPreview() {
-    val data1 = UserUiData(
-        isFavorite = true,
+fun FavoriteItemRowPreview() {
+    // Mock data for preview
+    val mockUserUiData = UserUiData(
         data = UserMetaData(
-            thumbnail = "thumbnail1",
-            title = "title1",
-            url = "http://example.com/1",
-            datetime = "2025-05-18T12:00:00.000+09:00"
-        )
-    )
-    val data2 = UserUiData(
-        isFavorite = false,
-        data = UserMetaData(
-            thumbnail = "thumbnail2",
-            title = "title2",
-            url = "http://example.com/2",
-            datetime = "2025-05-18T13:00:00.000+09:00"
-        )
-    )
-    val data3 = UserUiData(
-        isFavorite = true,
-        data = UserMetaData(
-            thumbnail = "thumbnail3",
-            title = "title3",
-            url = "http://example.com/3",
-            datetime = "2025-05-18T14:00:00.000+09:00"
-        )
+            title = "Sample Title",
+            thumbnail = "https://via.placeholder.com/300x300",
+            url = "sample@example.com",
+            datetime = "2023-01-01T12:00:00.000Z"
+        ),
+        isFavorite = true
     )
 
-    CommonTheme {
-        FavoritesTab(
-            gridState = LazyGridState(),
-            favorites = listOf(data1, data2, data3),
-            removeFavoriteTask = {},
-            startDetailActivity = { _, _ -> }
-        )
-    }
+    FavoriteItemRow(
+        item = mockUserUiData,
+        onFavoriteToggle = { },
+        onClick = { }
+    )
 }

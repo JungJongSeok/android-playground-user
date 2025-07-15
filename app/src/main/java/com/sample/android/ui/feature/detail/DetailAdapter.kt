@@ -1,4 +1,4 @@
-package com.sample.android.ui.detail
+package com.sample.android.ui.feature.detail
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.RequestManager
 import com.sample.android.databinding.HolderDetailBinding
-import com.sample.android.ui.data.UserUiData
+import com.sample.android.ui.feature.main.model.UserUiData
 
 interface DetailProperty {
     val requestManager: RequestManager

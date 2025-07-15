@@ -2,7 +2,8 @@ package com.sample.android.ui.detail
 
 import com.sample.android.data.UserMetaData
 import com.sample.android.repository.FavoriteRepository
-import com.sample.android.ui.data.UserUiData
+import com.sample.android.ui.feature.main.model.UserUiData
+import com.sample.android.ui.feature.detail.DetailViewModel
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.coVerify

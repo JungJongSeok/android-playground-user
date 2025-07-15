@@ -1,4 +1,4 @@
-package com.sample.android.ui.data
+package com.sample.android.ui.feature.main.model
 
 import androidx.annotation.Keep
 
