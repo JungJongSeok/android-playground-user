@@ -1,12 +1,9 @@
-package com.sample.android.ui.main
+package com.sample.android.ui.feature.main
 
-
-import android.content.Intent
-import android.os.Bundle
+import android.app.Activity.RESULT_OK
 import android.widget.Toast
-import androidx.activity.compose.setContent
+import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,74 +36,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.sample.android.R
 import com.sample.android.network.NetworkCommonException
-import com.sample.android.network.UserServiceImpl
-import com.sample.android.repository.FavoriteRepositoryImpl
-import com.sample.android.repository.SearchRepositoryImpl
-import com.sample.android.ui.BaseComponentActivity
-import com.sample.android.ui.detail.DetailActivity
+import com.sample.android.ui.feature.detail.DetailActivity
+import com.sample.android.ui.feature.detail.model.DetailExtraData
+import com.sample.android.ui.feature.main.coponent.FavoritesTab
+import com.sample.android.ui.feature.main.coponent.SearchTab
+import com.sample.android.ui.feature.main.model.SearchTabData
+import com.sample.android.ui.feature.main.model.UserUiData
 import com.sample.android.ui.theme.ColorBlack22
 import com.sample.android.ui.theme.ColorBlack88
 import com.sample.android.ui.theme.ColorBlackDD
 import com.sample.android.ui.theme.CommonTheme
-import com.sample.android.utils.PreferencesModuleImpl
 
-class MainActivity : BaseComponentActivity() {
-    companion object {
-        private const val KEY_DETAIL_ACTIVITY_RESULT = "key_detail_activity_result"
-    }
-
-    private val viewModel: MainViewModel by viewModels {
-        viewModelFactory {
-            initializer {
-                MainViewModel(
-                    SearchRepositoryImpl(userService = UserServiceImpl()),
-                    FavoriteRepositoryImpl(preferencesModule = PreferencesModuleImpl(this@MainActivity))
-                )
-            }
-        }
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            CommonTheme {
-                MainScreen(viewModel) { intent ->
-                    startDetailActivity(intent)
-                }
-            }
-        }
-
-        viewModel.initialize()
-    }
-
-    private fun startDetailActivity(intent: Intent) {
-        activityResultRegistry
-            .register(
-                KEY_DETAIL_ACTIVITY_RESULT,
-                ActivityResultContracts.StartActivityForResult()
-            ) {
-                if (it.resultCode == RESULT_OK) {
-                    viewModel.restore()
-                }
-            }.launch(intent)
-    }
-}
-
-private enum class MainTab(val index: Int, @StringRes val titleRes: Int) {
+enum class MainTab(val index: Int, @StringRes val titleRes: Int) {
     SEARCH(0, R.string.main_tab_search),
     FAVORITE(1, R.string.main_tab_favorite)
 }
 
 @Composable
-fun MainScreen(
-    viewModel: MainViewModel,
-    startDetailActivity: (Intent) -> Unit
-) {
-    val context = LocalContext.current
+fun MainRoute(viewModel: MainViewModel = hiltViewModel()) {
     val searches by viewModel.searches.collectAsState()
     val favorites by viewModel.favorites.collectAsState()
     val searchListState = rememberSaveable(saver = LazyListState.Saver) {
@@ -119,6 +69,8 @@ fun MainScreen(
     var selectedTab by rememberSaveable { mutableIntStateOf(MainTab.SEARCH.index) }
     var query by rememberSaveable { mutableStateOf("") }
     var isLoading by rememberSaveable { mutableStateOf(false) }
+
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.error
@@ -159,6 +111,52 @@ fun MainScreen(
             }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.initialize()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        MainScreen(
+            selectedTab = selectedTab,
+            onTabSelected = { selectedTab = it },
+            query = query,
+            onQueryChange = { query = it },
+            searches = searches,
+            favorites = favorites,
+            searchListState = searchListState,
+            favoriteGridState = favoriteGridState,
+            isLoading = isLoading,
+            onSearch = { viewModel.search(it) },
+            onAddFavorite = { viewModel.addFavoriteData(it) },
+            onRemoveFavorite = { viewModel.removeFavoriteData(it) },
+            onRestore = { viewModel.restore() },
+            tabs = tabs
+        )
+    }
+}
+
+@Composable
+fun MainScreen(
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    searches: List<SearchTabData>,
+    favorites: List<UserUiData>,
+    searchListState: LazyListState,
+    favoriteGridState: LazyGridState,
+    isLoading: Boolean,
+    onSearch: (String) -> Unit,
+    onAddFavorite: (UserUiData) -> Unit,
+    onRemoveFavorite: (UserUiData) -> Unit,
+    onRestore: () -> Unit,
+    tabs: List<MainTab>
+) {
+    val context = LocalContext.current
+
     Column {
         TabRow(
             selectedTabIndex = selectedTab,
@@ -179,13 +177,13 @@ fun MainScreen(
                 )
             },
         ) {
-            tabs.forEachIndexed { index, tabs ->
+            tabs.forEachIndexed { index, tab ->
                 Tab(
                     modifier = Modifier.height(70.dp),
                     selectedContentColor = Color.White,
                     unselectedContentColor = Color.White,
                     selected = selectedTab == index,
-                    onClick = { selectedTab = index },
+                    onClick = { onTabSelected(index) },
                     text = {
                         Box(
                             modifier = Modifier
@@ -194,7 +192,7 @@ fun MainScreen(
                             contentAlignment = Alignment.BottomCenter
                         ) {
                             Text(
-                                text = context.getString(tabs.titleRes),
+                                text = context.getString(tab.titleRes),
                                 fontSize = 16.sp,
                                 fontWeight = if (index == selectedTab) FontWeight.Bold else FontWeight.Normal,
                                 color = if (index == selectedTab) ColorBlack22 else ColorBlack88,
@@ -210,31 +208,41 @@ fun MainScreen(
                 searches = searches,
                 listState = searchListState,
                 isLoading = isLoading,
-                searchTask = { text ->
-                    viewModel.search(text)
-                },
-                onValueChangeTask = { text ->
-                    query = text
-                },
-                addFavoriteTask = {
-                    viewModel.addFavoriteData(it)
-                },
-                removeFavoriteTask = {
-                    viewModel.removeFavoriteData(it)
-                },
+                searchTask = onSearch,
+                onValueChangeTask = onQueryChange,
+                addFavoriteTask = onAddFavorite,
+                removeFavoriteTask = onRemoveFavorite,
                 startDetailActivity = { list ->
                     val intent = DetailActivity.intent(context, list)
-                    startDetailActivity.invoke(intent)
+                    val activity = context as? ComponentActivity ?: return@SearchTab
+                    activity.activityResultRegistry
+                        .register(
+                            DetailExtraData.KEY_DETAIL_ACTIVITY_RESULT,
+                            ActivityResultContracts.StartActivityForResult()
+                        ) {
+                            if (it.resultCode == RESULT_OK) {
+                                onRestore()
+                            }
+                        }.launch(intent)
                 },
             )
 
             MainTab.FAVORITE.index -> FavoritesTab(
                 favorites = favorites,
                 gridState = favoriteGridState,
-                removeFavoriteTask = { viewModel.removeFavoriteData(it) },
+                removeFavoriteTask = onRemoveFavorite,
                 startDetailActivity = { list, position ->
                     val intent = DetailActivity.intent(context, list, position)
-                    startDetailActivity.invoke(intent)
+                    val activity = context as? ComponentActivity ?: return@FavoritesTab
+                    activity.activityResultRegistry
+                        .register(
+                            DetailExtraData.KEY_DETAIL_ACTIVITY_RESULT,
+                            ActivityResultContracts.StartActivityForResult()
+                        ) {
+                            if (it.resultCode == RESULT_OK) {
+                                onRestore()
+                            }
+                        }.launch(intent)
                 },
             )
         }
@@ -246,11 +254,20 @@ fun MainScreen(
 fun MainPreview() {
     CommonTheme {
         MainScreen(
-            MainViewModel(
-                SearchRepositoryImpl(userService = UserServiceImpl()),
-                FavoriteRepositoryImpl(preferencesModule = PreferencesModuleImpl(LocalContext.current))
-            ),
-            startDetailActivity = {}
+            selectedTab = 0,
+            onTabSelected = {},
+            query = "",
+            onQueryChange = {},
+            searches = emptyList<SearchTabData>(),
+            favorites = emptyList<UserUiData>(),
+            searchListState = LazyListState(),
+            favoriteGridState = LazyGridState(),
+            isLoading = false,
+            onSearch = {},
+            onAddFavorite = {},
+            onRemoveFavorite = {},
+            onRestore = {},
+            tabs = listOf(MainTab.SEARCH, MainTab.FAVORITE)
         )
     }
 }

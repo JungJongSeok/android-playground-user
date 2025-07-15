@@ -1,19 +1,23 @@
-package com.sample.android.ui.detail
+package com.sample.android.ui.feature.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sample.android.repository.FavoriteRepository
-import com.sample.android.ui.data.UserUiData
-import com.sample.android.ui.data.like
-import com.sample.android.ui.data.unlike
+import com.sample.android.ui.feature.main.model.UserUiData
+import com.sample.android.ui.feature.main.model.like
+import com.sample.android.ui.feature.main.model.unlike
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.inject.Inject
 
-class DetailViewModel(private val favoriteRepository: FavoriteRepository) : ViewModel() {
+@HiltViewModel
+class DetailViewModel @Inject constructor(private val favoriteRepository: FavoriteRepository) :
+    ViewModel() {
     private val _currentList = mutableListOf<UserUiData>()
     val currentList
         get() = _currentList.toList()

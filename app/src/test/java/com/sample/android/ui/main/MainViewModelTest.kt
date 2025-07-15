@@ -5,8 +5,9 @@ import com.sample.android.data.UserMetaDataList
 import com.sample.android.network.request.UserRequest
 import com.sample.android.repository.FavoriteRepository
 import com.sample.android.repository.SearchRepository
-import com.sample.android.ui.data.SearchTabMetaData
-import com.sample.android.ui.data.UserUiData
+import com.sample.android.ui.feature.main.model.SearchTabMetaData
+import com.sample.android.ui.feature.main.model.UserUiData
+import com.sample.android.ui.feature.main.MainViewModel
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.coVerify

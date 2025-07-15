@@ -1,4 +1,4 @@
-package com.sample.android.ui.detail
+package com.sample.android.ui.feature.detail
 
 import android.content.Context
 import android.content.Intent
@@ -7,22 +7,20 @@ import androidx.activity.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
 import com.sample.android.databinding.ActivityDetailBinding
-import com.sample.android.repository.FavoriteRepositoryImpl
 import com.sample.android.ui.BaseAppCompatActivity
-import com.sample.android.ui.data.UserUiData
 import com.sample.android.ui.extension.getParcelableArrayListExtraSafety
-import com.sample.android.utils.PreferencesModuleImpl
+import com.sample.android.ui.feature.main.model.UserUiData
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
+@AndroidEntryPoint
 class DetailActivity : BaseAppCompatActivity() {
     companion object {
         private const val EXTRA_UI_LIST = "extra_ui_list"
@@ -46,19 +44,7 @@ class DetailActivity : BaseAppCompatActivity() {
         ActivityDetailBinding.inflate(layoutInflater)
     }
 
-    private val viewModel: DetailViewModel by viewModels {
-        viewModelFactory {
-            initializer {
-                DetailViewModel(
-                    FavoriteRepositoryImpl(
-                        preferencesModule = PreferencesModuleImpl(
-                            this@DetailActivity
-                        )
-                    )
-                )
-            }
-        }
-    }
+    private val viewModel: DetailViewModel by viewModels()
 
     private val selectedList: List<UserUiData> by lazy {
         return@lazy intent.getParcelableArrayListExtraSafety(EXTRA_UI_LIST) ?: emptyList()
