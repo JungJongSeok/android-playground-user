@@ -13,7 +13,7 @@ class UserServiceImpl : UserService {
     override suspend fun search(request: UserRequest): UserResponse {
         return NetworkModule.call(
             NetworkModule.Method.GET,
-            "https://randomuser.me/api",
+            "/api",
             queries = request.toMap(),
         )
     }
