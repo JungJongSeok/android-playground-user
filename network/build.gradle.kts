@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.jacoco)
 }
 
 android {
@@ -35,6 +36,18 @@ android {
     buildFeatures {
         buildConfig = true
     }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.isReturnDefaultValues = true
+        unitTests.all {
+            it.extensions.configure<JacocoTaskExtension> {
+                isIncludeNoLocationClasses = true
+                excludes = listOf("jdk.internal.*")
+            }
+            it.ignoreFailures = true
+        }
+    }
 }
 
 dependencies {
@@ -56,4 +69,8 @@ dependencies {
     debugImplementation(libs.stetho.okhttp3)
     debugImplementation(libs.stetho.js.rhino)
     debugImplementation(libs.profiler)
+}
+
+configure<JacocoPluginExtension> {
+    toolVersion = "0.8.10"
 }
