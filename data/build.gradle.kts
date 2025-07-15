@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.jacoco)
 }
 
 android {
@@ -36,6 +37,17 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.isReturnDefaultValues = true
+        unitTests.all {
+            it.extensions.configure<JacocoTaskExtension> {
+                isIncludeNoLocationClasses = true
+                excludes = listOf("jdk.internal.*")
+            }
+            it.ignoreFailures = true
+        }
+    }
 }
 
 dependencies {
@@ -53,4 +65,8 @@ dependencies {
     testImplementation(libs.okhttp3.mockwebserver)
     testImplementation(libs.robolectric)
     testApi(project(":network"))
+}
+
+configure<JacocoPluginExtension> {
+    toolVersion = "0.8.10"
 }

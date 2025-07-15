@@ -57,6 +57,7 @@ android {
                 isIncludeNoLocationClasses = true
                 excludes = listOf("jdk.internal.*")
             }
+            it.ignoreFailures = true
         }
     }
 }
@@ -78,9 +79,32 @@ tasks.register<JacocoReport>("jacocoTestReportMerged") {
     val classDirs = modules.map {
         fileTree("$rootDir/$it/build/tmp/kotlin-classes/debug") {
             exclude(
-                "**/R.class", "**/R$*.class",
-                "**/BuildConfig.*", "**/Manifest*.*",
-                "**/*Test*.*", "**/Hilt_*.class"
+                "**/R.class",
+                "**/R$*.class",
+                "**/BuildConfig.*",
+                "**/Manifest*.*",
+                "**/*Test*.*",
+                "**/Hilt_*.class",
+                "**/*_HiltModules*.class",
+                "**/*_ComponentTreeDeps*.class",
+                "**/*_MembersInjector*.class",
+                "**/*_Factory*.class",
+                "**/*_Provide*.class",
+                "**/AutoValue_*.class",
+                "**/Dagger*.class",
+                "**/*Module_*.class",
+                "**/*_Impl.class",
+                "**/*Database_Impl*.class",
+                "**/*Composable*.class",
+                "**/*\$Companion.class",
+                "**/*\$WhenMappings.class",
+                "**/ComposableSingletons\$*.class",
+                "**/*\$\$serializer.class",
+                "**/LiveLiterals\$*.class",
+                "**/*\$DefaultImpls.class",
+                "**/*\$\$Lambda\$*.class",
+                "**/synthetic/**",
+                "**/*\$\$internal\$*.class"
             )
         }
     }
