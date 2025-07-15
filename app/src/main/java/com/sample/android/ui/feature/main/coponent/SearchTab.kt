@@ -30,8 +30,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -61,8 +61,6 @@ fun SearchTab(
     removeFavoriteTask: (UserUiData) -> Unit,
     startDetailActivity: (List<UserUiData>) -> Unit
 ) {
-    val context = LocalContext.current
-
     Column(modifier = Modifier.fillMaxSize()) {
         Spacer(modifier = Modifier.height(20.dp))
         Box(
@@ -106,7 +104,7 @@ fun SearchTab(
                     ) { inner ->
                         if (query.isEmpty()) {
                             Text(
-                                text = context.getString(R.string.search_hint_text),
+                                text = stringResource(R.string.search_hint_text),
                                 color = ColorBlack88,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Normal,
@@ -173,7 +171,7 @@ fun SearchTab(
                                 text = if (!item.isEnd) {
                                     item.text
                                 } else {
-                                    context.getString(R.string.search_end_text)
+                                    stringResource(R.string.search_end_text)
                                 },
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 15.sp,

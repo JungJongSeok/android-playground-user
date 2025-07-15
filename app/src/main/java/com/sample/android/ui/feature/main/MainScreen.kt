@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -132,8 +133,20 @@ fun MainRoute(viewModel: MainViewModel = hiltViewModel()) {
             onSearch = { viewModel.search(it) },
             onAddFavorite = { viewModel.addFavoriteData(it) },
             onRemoveFavorite = { viewModel.removeFavoriteData(it) },
-            onRestore = { viewModel.restore() },
-            tabs = tabs
+            tabs = tabs,
+            startDetailActivity = { list, position ->
+                val intent = DetailActivity.intent(context, list, position)
+                val activity = context as? ComponentActivity ?: return@MainScreen
+                activity.activityResultRegistry
+                    .register(
+                        DetailExtraData.KEY_DETAIL_ACTIVITY_RESULT,
+                        ActivityResultContracts.StartActivityForResult()
+                    ) {
+                        if (it.resultCode == RESULT_OK) {
+                            viewModel.restore()
+                        }
+                    }.launch(intent)
+            }
         )
     }
 }
@@ -152,11 +165,9 @@ fun MainScreen(
     onSearch: (String) -> Unit,
     onAddFavorite: (UserUiData) -> Unit,
     onRemoveFavorite: (UserUiData) -> Unit,
-    onRestore: () -> Unit,
-    tabs: List<MainTab>
+    tabs: List<MainTab>,
+    startDetailActivity: (List<UserUiData>, Int) -> Unit
 ) {
-    val context = LocalContext.current
-
     Column {
         TabRow(
             selectedTabIndex = selectedTab,
@@ -192,7 +203,7 @@ fun MainScreen(
                             contentAlignment = Alignment.BottomCenter
                         ) {
                             Text(
-                                text = context.getString(tab.titleRes),
+                                text = stringResource(tab.titleRes),
                                 fontSize = 16.sp,
                                 fontWeight = if (index == selectedTab) FontWeight.Bold else FontWeight.Normal,
                                 color = if (index == selectedTab) ColorBlack22 else ColorBlack88,
@@ -213,17 +224,7 @@ fun MainScreen(
                 addFavoriteTask = onAddFavorite,
                 removeFavoriteTask = onRemoveFavorite,
                 startDetailActivity = { list ->
-                    val intent = DetailActivity.intent(context, list)
-                    val activity = context as? ComponentActivity ?: return@SearchTab
-                    activity.activityResultRegistry
-                        .register(
-                            DetailExtraData.KEY_DETAIL_ACTIVITY_RESULT,
-                            ActivityResultContracts.StartActivityForResult()
-                        ) {
-                            if (it.resultCode == RESULT_OK) {
-                                onRestore()
-                            }
-                        }.launch(intent)
+                    startDetailActivity(list, 0)
                 },
             )
 
@@ -232,17 +233,7 @@ fun MainScreen(
                 gridState = favoriteGridState,
                 removeFavoriteTask = onRemoveFavorite,
                 startDetailActivity = { list, position ->
-                    val intent = DetailActivity.intent(context, list, position)
-                    val activity = context as? ComponentActivity ?: return@FavoritesTab
-                    activity.activityResultRegistry
-                        .register(
-                            DetailExtraData.KEY_DETAIL_ACTIVITY_RESULT,
-                            ActivityResultContracts.StartActivityForResult()
-                        ) {
-                            if (it.resultCode == RESULT_OK) {
-                                onRestore()
-                            }
-                        }.launch(intent)
+                    startDetailActivity(list, position)
                 },
             )
         }
@@ -266,8 +257,8 @@ fun MainPreview() {
             onSearch = {},
             onAddFavorite = {},
             onRemoveFavorite = {},
-            onRestore = {},
-            tabs = listOf(MainTab.SEARCH, MainTab.FAVORITE)
+            tabs = listOf(MainTab.SEARCH, MainTab.FAVORITE),
+            startDetailActivity = { _, _ -> }
         )
     }
 }
