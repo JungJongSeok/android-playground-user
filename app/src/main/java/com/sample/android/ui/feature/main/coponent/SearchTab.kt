@@ -40,7 +40,7 @@ import com.sample.android.R
 import com.sample.android.data.UserMetaData
 import com.sample.android.ui.feature.main.model.SearchTabBorder
 import com.sample.android.ui.feature.main.model.SearchTabData
-import com.sample.android.ui.feature.main.model.SearchTabMetaData
+import com.sample.android.ui.feature.main.model.SearchTabUiData
 import com.sample.android.ui.feature.main.model.UserUiData
 import com.sample.android.ui.theme.ColorBlack22
 import com.sample.android.ui.theme.ColorBlack88
@@ -143,7 +143,7 @@ fun SearchTab(
             ) {
                 itemsIndexed(searches) { index, item ->
                     when (item) {
-                        is SearchTabMetaData -> Column {
+                        is SearchTabUiData -> Column {
                             if (index == 0) {
                                 Spacer(modifier = Modifier.height(10.dp))
                             }
@@ -217,7 +217,7 @@ fun SearchTab(
 @Preview(showBackground = true)
 @Composable
 fun SearchTabPreview() {
-    val data1 = SearchTabMetaData(
+    val data1 = SearchTabUiData(
         UserUiData(
             isFavorite = true,
             data = UserMetaData(
@@ -228,7 +228,7 @@ fun SearchTabPreview() {
             )
         )
     )
-    val data2 = SearchTabMetaData(
+    val data2 = SearchTabUiData(
         UserUiData(
             isFavorite = false,
             data = UserMetaData(
@@ -239,7 +239,7 @@ fun SearchTabPreview() {
             )
         )
     )
-    val data3 = SearchTabMetaData(
+    val data3 = SearchTabUiData(
         UserUiData(
             isFavorite = true,
             data = UserMetaData(

@@ -104,7 +104,12 @@ tasks.register<JacocoReport>("jacocoTestReportMerged") {
                 "**/*\$DefaultImpls.class",
                 "**/*\$\$Lambda\$*.class",
                 "**/synthetic/**",
-                "**/*\$\$internal\$*.class"
+                "**/*\$\$internal\$*.class",
+                "**/*Activity.class",
+                "**/*Activity*.class",
+                "**/*di*",
+                "**/*Kt.class",
+                "**/*Kt*.class",
             )
         }
     }

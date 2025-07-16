@@ -5,7 +5,7 @@ import com.sample.android.data.UserMetaDataList
 import com.sample.android.network.request.UserRequest
 import com.sample.android.repository.FavoriteRepository
 import com.sample.android.repository.SearchRepository
-import com.sample.android.ui.feature.main.model.SearchTabMetaData
+import com.sample.android.ui.feature.main.model.SearchTabUiData
 import com.sample.android.ui.feature.main.model.UserUiData
 import com.sample.android.ui.feature.main.MainViewModel
 import io.mockk.MockKAnnotations
@@ -28,7 +28,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import java.net.UnknownHostException
-import kotlin.coroutines.cancellation.CancellationException
 
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -103,7 +102,7 @@ class MainViewModelTest {
         assertEquals(UserUiData(true, data1), viewModel.favorites.value.first())
         val isFavoriteData =
             viewModel.searches.value
-                .mapNotNull { it as? SearchTabMetaData }
+                .mapNotNull { it as? SearchTabUiData }
                 .find { it.data.data == data1 }?.data?.isFavorite ?: false
         assertTrue(isFavoriteData)
     }
@@ -163,26 +162,6 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `searchCancel prevents paging`() = runTest {
-        coEvery { searchRepository.searchItem(userRequest1) } coAnswers {
-            throw CancellationException()
-        }
-        var exception: Exception? = null
-        val job = launch(testDispatcher) {
-            viewModel.error.collect {
-                exception = it
-            }
-        }
-
-        viewModel.search(userRequest1.seed)
-        viewModel.searchCancel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertFalse(exception != null)
-        job.cancel()
-    }
-
-    @Test
     fun `exception when searching`() = runTest {
         coEvery { searchRepository.searchItem(userRequest1) } coAnswers {
             throw UnknownHostException()
@@ -218,7 +197,7 @@ class MainViewModelTest {
         coVerify { favoriteRepository.add(data1) }
         val isFavoriteData =
             viewModel.searches.value
-                .mapNotNull { it as? SearchTabMetaData }
+                .mapNotNull { it as? SearchTabUiData }
                 .find { it.data.data == data1 }?.data?.isFavorite ?: false
         assertTrue(isFavoriteData)
         assertEquals(1, viewModel.favorites.value.size)
@@ -242,7 +221,7 @@ class MainViewModelTest {
         coVerify { favoriteRepository.remove(data1) }
         val isFavoriteData =
             viewModel.searches.value
-                .mapNotNull { it as? SearchTabMetaData }
+                .mapNotNull { it as? SearchTabUiData }
                 .find { it.data.data == data1 }?.data?.isFavorite ?: false
         assertFalse(isFavoriteData)
         assertTrue(viewModel.favorites.value.isEmpty())

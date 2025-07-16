@@ -7,7 +7,7 @@ import com.sample.android.repository.FavoriteRepository
 import com.sample.android.repository.SearchRepository
 import com.sample.android.ui.feature.main.model.SearchTabBorder
 import com.sample.android.ui.feature.main.model.SearchTabData
-import com.sample.android.ui.feature.main.model.SearchTabMetaData
+import com.sample.android.ui.feature.main.model.SearchTabUiData
 import com.sample.android.ui.feature.main.model.UserUiData
 import com.sample.android.ui.feature.main.model.addUiData
 import com.sample.android.ui.feature.main.model.like
@@ -17,6 +17,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -74,8 +75,8 @@ class MainViewModel @Inject constructor(
 
                 val favoriteSet = favoriteList.map { it.data }.toSet()
                 val searchList = searches.value.map { search ->
-                    if (search is SearchTabMetaData) {
-                        SearchTabMetaData(
+                    if (search is SearchTabUiData) {
+                        SearchTabUiData(
                             UserUiData(
                                 favoriteSet.contains(search.data.data),
                                 search.data.data
@@ -94,17 +95,19 @@ class MainViewModel @Inject constructor(
 
     private var searchJob: Job? = null
     fun search(query: String) {
-        searchJob?.cancel()
-        searchJob = viewModelScope.launch {
-            _loading.emit(true)
-            delay(300)
-            if (query.isBlank()) {
+        viewModelScope.launch {
+            searchJob?.cancelAndJoin()
+            searchJob = launch job@{
+                _loading.emit(true)
+                delay(300)
+                if (query.isBlank()) {
+                    _loading.emit(false)
+                    searchJob?.cancelAndJoin()
+                    return@job
+                }
+                paging(query, 1)
                 _loading.emit(false)
-                searchJob?.cancel()
-                return@launch
             }
-            paging(query, 1)
-            _loading.emit(false)
         }
     }
 
@@ -118,10 +121,6 @@ class MainViewModel @Inject constructor(
             }
             paging(query, _currentPage)
         }
-    }
-
-    fun searchCancel() {
-        searchJob?.cancel()
     }
 
     private val searchLock = AtomicBoolean(false)
@@ -138,7 +137,7 @@ class MainViewModel @Inject constructor(
                 val favoriteSet = favorites.value.map { it.data }.toSet()
                 val list = response.users.map { data ->
                     UserUiData(favoriteSet.contains(data), data)
-                }.map { SearchTabMetaData(it) } + if (response.users.isEmpty()) {
+                }.map { SearchTabUiData(it) } + if (response.users.isEmpty()) {
                     SearchTabBorder("", true)
                 } else {
                     SearchTabBorder(currentPosition.toString(), false)

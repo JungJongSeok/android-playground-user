@@ -1,5 +1,6 @@
 package com.sample.android.data
 
+import android.os.Build
 import android.os.Parcelable
 import androidx.annotation.Keep
 import com.sample.android.network.response.UserResult
@@ -17,9 +18,17 @@ data class UserMetaData(
 ) : Parcelable {
     val timestamp: Long
         get() {
-            return SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.getDefault()).parse(
-                datetime ?: return 0L
-            )?.time ?: 0L
+            return try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.getDefault()).parse(
+                        datetime ?: return 0L
+                    )?.time ?: 0L
+                } else {
+                    0L
+                }
+            } catch (e: Exception) {
+                0L
+            }
         }
 }
 

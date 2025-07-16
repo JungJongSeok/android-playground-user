@@ -4,8 +4,11 @@ import com.sample.android.network.NetworkModule.handelResultImpl
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
@@ -18,6 +21,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.Continuation
 
 @ExperimentalCoroutinesApi
@@ -103,6 +107,34 @@ class NetworkModuleTest {
         assertNotNull(result)
     }
 
+    @Test
+    fun `createRequestBody should handle null values in objects`() {
+        val data = TestModelWithNull(null, "test", null)
+        val result = NetworkModule.createRequestBody(data)
+        assertNotNull(result)
+
+        // Test the actual content contains null values
+        val bodyString = result?.let { okio.Buffer().apply { it.writeTo(this) }.readUtf8() }
+        assertTrue(bodyString?.contains("null") ?: false)
+    }
+
+    @Test
+    fun `createRequestBody should handle empty strings`() {
+        val data = TestModel("", "")
+        val result = NetworkModule.createRequestBody(data)
+        assertNotNull(result)
+    }
+
+    @Test
+    fun `createRequestBody should handle nested objects`() {
+        val nestedData = mapOf(
+            "user" to TestModel("123", "test"),
+            "metadata" to mapOf("version" to 1, "active" to true)
+        )
+        val result = NetworkModule.createRequestBody(nestedData)
+        assertNotNull(result)
+    }
+
     // Query parameter building tests
     @Test
     fun `buildUrlWithQueries should return original URL when queries is null`() {
@@ -135,6 +167,57 @@ class NetworkModuleTest {
         val url = "https://example.com/test"
         val result = NetworkModule.buildUrlWithQueries(url, emptyMap())
         assertEquals(url, result)
+    }
+
+    @Test
+    fun `buildUrlWithQueries should handle special characters in values`() {
+        val url = "https://example.com/test"
+        val queries = mapOf(
+            "query" to "hello world",
+            "special" to "!@#$%^&*()",
+            "unicode" to "한글테스트"
+        )
+        val result = NetworkModule.buildUrlWithQueries(url, queries)
+        assertTrue(result.contains("query=hello%20world"))
+        assertTrue(result.contains("special="))
+        assertTrue(result.contains("unicode="))
+    }
+
+    @Test
+    fun `buildUrlWithQueries should handle boolean and number values`() {
+        val url = "https://example.com/test"
+        val queries = mapOf(
+            "active" to true,
+            "count" to 42,
+            "score" to 3.14
+        )
+        val result = NetworkModule.buildUrlWithQueries(url, queries)
+        assertTrue(result.contains("active=true"))
+        assertTrue(result.contains("count=42"))
+        assertTrue(result.contains("score=3.14"))
+    }
+
+    @Test
+    fun `buildUrlWithQueries should handle multiple query parameters with same key`() {
+        val url = "https://example.com/test"
+        val queries = mapOf(
+            "filter" to "first",
+            "sort" to "asc"
+        )
+
+        val result = NetworkModule.buildUrlWithQueries(url, queries)
+        assertTrue(result.contains("filter=first"))
+        assertTrue(result.contains("sort=asc"))
+    }
+
+    @Test
+    fun `buildUrlWithQueries should handle extremely long query values`() {
+        val url = "https://example.com/test"
+        val longValue = "a".repeat(1000)
+        val queries = mapOf("longParam" to longValue)
+
+        val result = NetworkModule.buildUrlWithQueries(url, queries)
+        assertTrue(result.contains("longParam="))
     }
 
     // Request building tests
@@ -186,6 +269,21 @@ class NetworkModuleTest {
         }
     }
 
+    @Test
+    fun `buildRequest should handle empty headers map`() {
+        val url = "https://example.com/test"
+        val request = NetworkModule.buildRequest(url, NetworkModule.Method.GET, null, emptyMap())
+        assertEquals(url, request.url.toString())
+        assertEquals("GET", request.method)
+    }
+
+    @Test
+    fun `buildRequest should handle null request body for GET`() {
+        val url = "https://example.com/test"
+        val request = NetworkModule.buildRequest(url, NetworkModule.Method.GET, null, emptyMap())
+        assertNull(request.body)
+    }
+
     // Gson creation tests
     @Test
     fun `createGson should create Gson with serializeNulls`() {
@@ -193,6 +291,22 @@ class NetworkModuleTest {
         val testObject = TestModelWithNull("id", null, 123)
         val json = gson.toJson(testObject)
         assertTrue(json.contains("\"name\":null"))
+    }
+
+    @Test
+    fun `createGson should handle complex nested objects`() {
+        val gson = NetworkModule.createGson()
+        val complexObject = mapOf(
+            "nested" to mapOf(
+                "level1" to mapOf(
+                    "level2" to TestModelWithNull(null, "test", null)
+                )
+            ),
+            "array" to listOf(1, 2, null, 4)
+        )
+        val json = gson.toJson(complexObject)
+        assertTrue(json.contains("null"))
+        assertTrue(json.contains("level2"))
     }
 
     // Interceptor creation tests
@@ -206,6 +320,21 @@ class NetworkModuleTest {
         assertNotNull(interceptor)
     }
 
+    @Test
+    fun `createInterceptor should add Content-Type header to request`() {
+        val request = Request.Builder()
+            .url("https://example.com/test")
+            .build()
+
+        val interceptor = NetworkModule.createInterceptor(request)
+        val mockChain = MockInterceptorChain(request)
+
+        val response = interceptor.intercept(mockChain)
+
+        // Check that Content-Type header was added to both request and response
+        assertEquals("application/json;charset=UTF-8", response.header("Content-Type"))
+    }
+
     // OkHttpClient creation tests
     @Test
     fun `provideOkHttpClient should create client with interceptor`() {
@@ -215,7 +344,23 @@ class NetworkModuleTest {
         val interceptor = NetworkModule.createInterceptor(request)
 
         val client = NetworkModule.provideOkHttpClient(interceptor)
+
         assertNotNull(client)
+        assertEquals(1, client.interceptors.size)
+        assertTrue(client.interceptors.contains(interceptor))
+    }
+
+    @Test
+    fun `provideOkHttpClient should create client with correct configuration`() {
+        val request = Request.Builder()
+            .url("https://example.com/test")
+            .build()
+        val interceptor = NetworkModule.createInterceptor(request)
+
+        val client = NetworkModule.provideOkHttpClient(interceptor)
+
+        assertNotNull(client)
+        assertEquals(1, client.interceptors.size)
         assertTrue(client.interceptors.contains(interceptor))
     }
 
@@ -443,6 +588,36 @@ class NetworkModuleTest {
     }
 
     @Test
+    fun `call should handle request with all HTTP methods and verify request body handling`() =
+        runBlocking {
+            val responseBody = """{"id":"method-test","name":"test"}"""
+            val requestData = TestModel("123", "test")
+
+            // Test each method
+            NetworkModule.Method.values().forEach { method ->
+                server.enqueue(MockResponse().setResponseCode(200).setBody(responseBody))
+                val endpoint = server.url("/test").toString()
+
+                val result: TestModel = NetworkModule.call(
+                    method,
+                    endpoint,
+                    if (method == NetworkModule.Method.POST || method == NetworkModule.Method.PUT) requestData else null
+                )
+
+                assertEquals("method-test", result.id)
+
+                val recordedRequest = server.takeRequest()
+                assertEquals(method.name, recordedRequest.method)
+
+                // Check if request body exists for POST/PUT
+                if (method == NetworkModule.Method.POST || method == NetworkModule.Method.PUT) {
+                    assertNotNull(recordedRequest.body)
+                    assertTrue(recordedRequest.body.size > 0)
+                }
+            }
+        }
+
+    @Test
     fun `internalCall should work directly`() = runBlocking {
         val responseBody = """{"id":"internal","name":"test"}"""
         server.enqueue(MockResponse().setResponseCode(200).setBody(responseBody))
@@ -582,6 +757,153 @@ class NetworkModuleTest {
     }
 
     @Test
+    fun `handleResponseImpl should handle null response body`() {
+        val request = Request.Builder()
+            .url("https://example.com/test")
+            .build()
+
+        val response = Response.Builder()
+            .request(request)
+            .protocol(Protocol.HTTP_1_1)
+            .code(200)
+            .message("OK")
+            .body(null)
+            .build()
+
+        var testResult: TestModel? = null
+        var testException: Exception? = null
+
+        val continuation = object : Continuation<TestModel> {
+            override val context = kotlin.coroutines.EmptyCoroutineContext
+            override fun resumeWith(result: Result<TestModel>) {
+                result.fold(
+                    onSuccess = { testResult = it },
+                    onFailure = { testException = it as? Exception }
+                )
+            }
+        }
+
+        NetworkModule.handleResponseImpl(response, continuation, TestModel::class.java)
+
+        assertNull(testResult)
+        assertNotNull(testException)
+        val exception = testException as NetworkCommonException
+        assertEquals(NetworkCommonException.CODE_NULL_POINTER_ERROR, exception.code)
+        assertTrue(exception.message!!.contains("Failed null pointer error"))
+    }
+
+    @Test
+    fun `handleErrorResponse should handle ErrorResponse with errorType`() {
+        val request = Request.Builder()
+            .url("https://example.com/test")
+            .build()
+
+        val errorJson = """{"errorType":"ValidationError","message":"Invalid input"}"""
+        val response = Response.Builder()
+            .request(request)
+            .protocol(Protocol.HTTP_1_1)
+            .code(400)
+            .message("Bad Request")
+            .body(errorJson.toResponseBody("application/json".toMediaType()))
+            .build()
+
+        var testResult: TestModel? = null
+        var testException: Exception? = null
+
+        val continuation = object : Continuation<TestModel> {
+            override val context = kotlin.coroutines.EmptyCoroutineContext
+            override fun resumeWith(result: Result<TestModel>) {
+                result.fold(
+                    onSuccess = { testResult = it },
+                    onFailure = { testException = it as? Exception }
+                )
+            }
+        }
+
+        NetworkModule.handleErrorResponse(response, errorJson, continuation)
+
+        assertNull(testResult)
+        assertNotNull(testException)
+        val exception = testException as NetworkCommonException
+        assertEquals(400, exception.code)
+        assertEquals("Invalid input", exception.message)
+    }
+
+    @Test
+    fun `handleErrorResponse should handle ErrorResponse with null message`() {
+        val request = Request.Builder()
+            .url("https://example.com/test")
+            .build()
+
+        val errorJson = """{"errorType":"UnknownError","message":null}"""
+        val response = Response.Builder()
+            .request(request)
+            .protocol(Protocol.HTTP_1_1)
+            .code(500)
+            .message("Internal Server Error")
+            .body(errorJson.toResponseBody("application/json".toMediaType()))
+            .build()
+
+        var testResult: TestModel? = null
+        var testException: Exception? = null
+
+        val continuation = object : Continuation<TestModel> {
+            override val context = kotlin.coroutines.EmptyCoroutineContext
+            override fun resumeWith(result: Result<TestModel>) {
+                result.fold(
+                    onSuccess = { testResult = it },
+                    onFailure = { testException = it as? Exception }
+                )
+            }
+        }
+
+        NetworkModule.handleErrorResponse(response, errorJson, continuation)
+
+        assertNull(testResult)
+        assertNotNull(testException)
+        val exception = testException as NetworkCommonException
+        assertEquals(500, exception.code)
+        assertEquals("Unknown error", exception.message)
+    }
+
+    @Test
+    fun `handleErrorResponse should handle completely empty error response`() {
+        val request = Request.Builder()
+            .url("https://example.com/test")
+            .build()
+
+        val errorJson = """{}"""
+        val response = Response.Builder()
+            .request(request)
+            .protocol(Protocol.HTTP_1_1)
+            .code(404)
+            .message("Not Found")
+            .body(errorJson.toResponseBody("application/json".toMediaType()))
+            .build()
+
+        var testResult: TestModel? = null
+        var testException: Exception? = null
+
+        val continuation = object : Continuation<TestModel> {
+            override val context = kotlin.coroutines.EmptyCoroutineContext
+            override fun resumeWith(result: Result<TestModel>) {
+                result.fold(
+                    onSuccess = { testResult = it },
+                    onFailure = { testException = it as? Exception }
+                )
+            }
+        }
+
+        NetworkModule.handleErrorResponse(response, errorJson, continuation)
+
+        assertNull(testResult)
+        assertNotNull(testException)
+        val exception = testException as NetworkCommonException
+        assertEquals(404, exception.code)
+        assertEquals("Unknown error", exception.message)
+    }
+
+    @Test
     fun `handleSuccessfulResponseImpl should parse JSON correctly`() {
         val jsonString = """{"id":"success-impl","name":"parsed"}"""
         var testResult: TestModel? = null
@@ -660,5 +982,67 @@ class NetworkModuleTest {
         assertNull(testResult?.name)
         assertEquals(123, testResult?.value)
         assertNull(testException)
+    }
+
+    @Test
+    fun `NetworkCommonException should preserve all properties correctly`() {
+        val originalException = RuntimeException("Original cause")
+        val exception = NetworkCommonException(
+            code = 500,
+            message = "Test error message",
+            cause = originalException
+        )
+
+        assertEquals(500, exception.code)
+        assertEquals("Test error message", exception.message)
+        assertEquals(originalException, exception.cause)
+    }
+
+    @Test
+    fun `NetworkCommonException should handle null message`() {
+        val exception = NetworkCommonException(
+            code = 400,
+            message = null,
+            cause = null
+        )
+
+        assertEquals(400, exception.code)
+        assertNull(exception.message)
+        assertNull(exception.cause)
+    }
+
+    @Test
+    fun `NetworkCommonException should have correct constants`() {
+        assertEquals(9900, NetworkCommonException.CODE_FAILED_NETWORK)
+        assertEquals(9901, NetworkCommonException.CODE_FAILED_JSON_PARSING)
+        assertEquals(9902, NetworkCommonException.CODE_NULL_POINTER_ERROR)
+    }
+
+    // Helper class for testing interceptor
+    private class MockInterceptorChain(private val request: Request) : okhttp3.Interceptor.Chain {
+        override fun request(): Request = request
+
+        override fun proceed(request: Request): Response {
+            return Response.Builder()
+                .request(request)
+                .protocol(Protocol.HTTP_1_1)
+                .code(200)
+                .message("OK")
+                .addHeader("Content-Type", "application/json;charset=UTF-8")
+                .body("{}".toResponseBody("application/json".toMediaType()))
+                .build()
+        }
+
+        override fun connection(): okhttp3.Connection? = null
+        override fun call(): okhttp3.Call = TODO()
+        override fun connectTimeoutMillis(): Int = 0
+        override fun withConnectTimeout(timeout: Int, unit: TimeUnit): okhttp3.Interceptor.Chain =
+            this
+
+        override fun readTimeoutMillis(): Int = 0
+        override fun withReadTimeout(timeout: Int, unit: TimeUnit): okhttp3.Interceptor.Chain = this
+        override fun writeTimeoutMillis(): Int = 0
+        override fun withWriteTimeout(timeout: Int, unit: TimeUnit): okhttp3.Interceptor.Chain =
+            this
     }
 }

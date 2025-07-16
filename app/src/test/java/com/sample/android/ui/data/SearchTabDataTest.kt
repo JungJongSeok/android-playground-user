@@ -3,7 +3,7 @@ package com.sample.android.ui.data
 import com.sample.android.data.UserMetaData
 import com.sample.android.ui.feature.main.model.SearchTabBorder
 import com.sample.android.ui.feature.main.model.SearchTabData
-import com.sample.android.ui.feature.main.model.SearchTabMetaData
+import com.sample.android.ui.feature.main.model.SearchTabUiData
 import com.sample.android.ui.feature.main.model.UserUiData
 import com.sample.android.ui.feature.main.model.like
 import com.sample.android.ui.feature.main.model.unlike
@@ -37,8 +37,8 @@ class SearchTabDataTest {
     private val uiData1True = uiData1.copy(isFavorite = true)
     private val uiData2True = uiData2.copy(isFavorite = true)
 
-    private val searchTabData1 = SearchTabMetaData(data = uiData1)
-    private val searchTabData2 = SearchTabMetaData(data = uiData2)
+    private val searchTabData1 = SearchTabUiData(data = uiData1)
+    private val searchTabData2 = SearchTabUiData(data = uiData2)
     private val border = SearchTabBorder(text = "1", isEnd = false)
 
     private val baseList: List<SearchTabData> = listOf(searchTabData1, border, searchTabData2)
@@ -47,30 +47,30 @@ class SearchTabDataTest {
     fun `like sets only the matching meta data to isFavorite = true`() {
         val result = baseList.like(uiData1)
 
-        val first = result[0] as SearchTabMetaData
+        val first = result[0] as SearchTabUiData
         assertTrue(first.data.isFavorite)
 
         val middle = result[1] as SearchTabBorder
         assertEquals(border, middle)
 
-        val third = result[2] as SearchTabMetaData
+        val third = result[2] as SearchTabUiData
         assertFalse(third.data.isFavorite)
     }
 
     @Test
     fun `unlike sets only the matching meta data to isFavorite = false`() {
         val likedList = listOf(
-            SearchTabMetaData(data = uiData1True),
+            SearchTabUiData(data = uiData1True),
             border,
-            SearchTabMetaData(data = uiData2True)
+            SearchTabUiData(data = uiData2True)
         )
 
         val result = likedList.unlike(uiData1True)
 
-        val first = result[0] as SearchTabMetaData
+        val first = result[0] as SearchTabUiData
         assertFalse(first.data.isFavorite)
 
-        val third = result[2] as SearchTabMetaData
+        val third = result[2] as SearchTabUiData
         assertTrue(third.data.isFavorite)
     }
 

@@ -3,7 +3,7 @@ package com.sample.android.ui.feature.main.model
 import androidx.annotation.Keep
 
 @Keep
-data class SearchTabMetaData(
+data class SearchTabUiData(
     val data: UserUiData
 ) : SearchTabData
 
@@ -25,7 +25,7 @@ fun List<SearchTabData>.unlike(userUiData: UserUiData): List<SearchTabData> {
 
 private fun List<SearchTabData>.changeFavoriteStatus(userUiData: UserUiData, isFavorite: Boolean): List<SearchTabData> {
     return this.map { search ->
-        if (search is SearchTabMetaData && search.data == userUiData) {
+        if (search is SearchTabUiData && search.data == userUiData) {
             search.copy(data = search.data.copy(isFavorite = isFavorite))
         } else {
             search

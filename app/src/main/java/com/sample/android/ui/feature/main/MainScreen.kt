@@ -4,7 +4,6 @@ import android.app.Activity.RESULT_OK
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,23 +37,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.sample.android.R
 import com.sample.android.network.NetworkCommonException
 import com.sample.android.ui.feature.detail.DetailActivity
 import com.sample.android.ui.feature.detail.model.DetailExtraData
 import com.sample.android.ui.feature.main.coponent.FavoritesTab
 import com.sample.android.ui.feature.main.coponent.SearchTab
+import com.sample.android.ui.feature.main.model.MainTab
 import com.sample.android.ui.feature.main.model.SearchTabData
 import com.sample.android.ui.feature.main.model.UserUiData
 import com.sample.android.ui.theme.ColorBlack22
 import com.sample.android.ui.theme.ColorBlack88
 import com.sample.android.ui.theme.ColorBlackDD
 import com.sample.android.ui.theme.CommonTheme
-
-enum class MainTab(val index: Int, @StringRes val titleRes: Int) {
-    SEARCH(0, R.string.main_tab_search),
-    FAVORITE(1, R.string.main_tab_favorite)
-}
 
 @Composable
 fun MainRoute(viewModel: MainViewModel = hiltViewModel()) {
