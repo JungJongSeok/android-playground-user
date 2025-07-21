@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.sample.android.network.request.UserRequest
 import com.sample.android.repository.FavoriteRepository
 import com.sample.android.repository.SearchRepository
+import com.sample.android.ui.feature.main.model.MainEffect
+import com.sample.android.ui.feature.main.model.MainIntent
+import com.sample.android.ui.feature.main.model.MainState
 import com.sample.android.ui.feature.main.model.SearchTabBorder
 import com.sample.android.ui.feature.main.model.SearchTabData
 import com.sample.android.ui.feature.main.model.SearchTabUiData
@@ -21,60 +24,79 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
+/**
+ * MVI ViewModel for Main screen
+ * Processes Intents, emits States and Effects
+ */
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val searchRepository: SearchRepository,
     private val favoriteRepository: FavoriteRepository
 ) : ViewModel() {
-    private val _searches = MutableStateFlow<List<SearchTabData>>(emptyList())
-    val searches = _searches.asStateFlow()
 
-    private val _favorites = MutableStateFlow<List<UserUiData>>(emptyList())
-    val favorites = _favorites.asStateFlow()
+    // State
+    private val _state = MutableStateFlow(MainState.initial())
+    val state = _state.asStateFlow()
 
-    private val _loading = MutableSharedFlow<Boolean>()
-    val loading = _loading.asSharedFlow()
+    // Effect
+    private val _effect = MutableSharedFlow<MainEffect>()
+    val effect = _effect.asSharedFlow()
 
-    private val _scrollToTop = MutableSharedFlow<Boolean>()
-    val scrollToTop = _scrollToTop.asSharedFlow()
+    // Search job for cancellation
+    private var searchJob: Job? = null
+    private val searchLock = AtomicBoolean(false)
+    private val favoriteLock = AtomicBoolean(false)
 
-    private val _error = MutableSharedFlow<Exception>()
-    val error = _error.asSharedFlow()
+    /**
+     * Process user intents
+     */
+    fun processIntent(intent: MainIntent) {
+        when (intent) {
+            is MainIntent.Initialize -> handleInitialize()
+            is MainIntent.Restore -> handleRestore()
+            is MainIntent.Search -> handleSearch(intent.query)
+            is MainIntent.SearchMore -> handleSearchMore(intent.query)
+            is MainIntent.AddFavorite -> handleAddFavorite(intent.userUiData)
+            is MainIntent.RemoveFavorite -> handleRemoveFavorite(intent.userUiData)
+        }
+    }
 
-    private var _query = ""
-    private var _currentPage = 1
-    private var _isEnd = false
-
-    fun initialize() {
+    private fun handleInitialize() {
         viewModelScope.launch {
             try {
                 val data = favoriteRepository.get().map { data ->
                     UserUiData(true, data)
                 }
-                _favorites.emit(data)
+                updateState { it.copy(favorites = data) }
             } catch (e: Exception) {
-                _error.emit(e)
+                _effect.emit(MainEffect.ShowError(e))
             }
         }
     }
 
-    fun restore() {
+    private fun handleRestore() {
         viewModelScope.launch {
             try {
                 val favoriteList = favoriteRepository.get().map { data ->
                     UserUiData(true, data)
                 }
-                _favorites.emit(favoriteList)
-
                 val favoriteSet = favoriteList.map { it.data }.toSet()
-                val searchList = searches.value.map { search ->
+                val searchList = state.value.searches.map { search ->
                     if (search is SearchTabUiData) {
                         SearchTabUiData(
                             UserUiData(
@@ -86,55 +108,65 @@ class MainViewModel @Inject constructor(
                         search
                     }
                 }
-                _searches.emit(searchList)
+                updateState {
+                    it.copy(
+                        favorites = favoriteList,
+                        searches = searchList
+                    )
+                }
             } catch (e: Exception) {
-                _error.emit(e)
+                _effect.emit(MainEffect.ShowError(e))
             }
         }
     }
 
-    private var searchJob: Job? = null
-    fun search(query: String) {
+    private fun handleSearch(query: String) {
         viewModelScope.launch {
             searchJob?.cancelAndJoin()
             searchJob = launch job@{
-                _loading.emit(true)
+                updateState { it.copy(isLoading = true) }
                 delay(300)
                 if (query.isBlank()) {
-                    _loading.emit(false)
+                    updateState { it.copy(isLoading = false) }
                     searchJob?.cancelAndJoin()
                     return@job
                 }
                 paging(query, 1)
-                _loading.emit(false)
+                updateState { it.copy(isLoading = false) }
             }
         }
     }
 
-    fun searchMore(query: String = _query) {
-        if (_isEnd) {
+    private fun handleSearchMore(query: String) {
+        val currentState = state.value
+        val searchQuery = query.ifBlank { currentState.query }
+
+        if (currentState.isEnd || currentState.isLoadingMore) {
             return
         }
+
         searchJob = viewModelScope.launch {
-            if (query.isBlank()) {
+            if (searchQuery.isBlank()) {
                 return@launch
             }
-            paging(query, _currentPage)
+            updateState { it.copy(isLoadingMore = true) }
+            paging(searchQuery, currentState.currentPage)
+            updateState { it.copy(isLoadingMore = false) }
         }
     }
 
-    private val searchLock = AtomicBoolean(false)
     private suspend fun paging(query: String, currentPosition: Int) {
         withContext(Dispatchers.Unconfined) {
             try {
                 if (searchLock.getAndSet(true)) {
                     return@withContext
                 }
-                _query = query
+
                 val response = searchRepository.searchItem(UserRequest(query, currentPosition))
-                _currentPage = currentPosition + 1
-                _isEnd = response.users.isEmpty()
-                val favoriteSet = favorites.value.map { it.data }.toSet()
+                val nextPage = currentPosition + 1
+                val isEnd = response.users.isEmpty()
+                val favoriteSet = state.value.favorites.map { it.data }.toSet()
+
                 val list = response.users.map { data ->
                     UserUiData(favoriteSet.contains(data), data)
                 }.map { SearchTabUiData(it) } + if (response.users.isEmpty()) {
@@ -142,54 +174,89 @@ class MainViewModel @Inject constructor(
                 } else {
                     SearchTabBorder(currentPosition.toString(), false)
                 }
-                if (currentPosition <= 1) {
-                    _searches.emit(list)
-                    _scrollToTop.emit(true)
-                } else {
-                    _searches.emit(_searches.value + list)
+
+                updateState { currentState ->
+                    if (currentPosition <= 1) {
+                        viewModelScope.launch {
+                            _effect.emit(MainEffect.ScrollToTop)
+                        }
+                        currentState.copy(
+                            searches = list,
+                            query = query,
+                            currentPage = nextPage,
+                            isEnd = isEnd
+                        )
+                    } else {
+                        currentState.copy(
+                            searches = currentState.searches + list,
+                            currentPage = nextPage,
+                            isEnd = isEnd
+                        )
+                    }
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _error.emit(e)
+                _effect.emit(MainEffect.ShowError(e))
             } finally {
                 searchLock.set(false)
             }
         }
     }
 
-    private val favoriteLock = AtomicBoolean(false)
-    fun addFavoriteData(userUiData: UserUiData) {
+    private fun handleAddFavorite(userUiData: UserUiData) {
         viewModelScope.launch {
             if (favoriteLock.getAndSet(true)) {
                 return@launch
             }
-            favoriteRepository.add(userUiData.data)
+            try {
+                favoriteRepository.add(userUiData.data)
 
-            val searchList = searches.value.like(userUiData)
-            _searches.emit(searchList)
+                val searchList = state.value.searches.like(userUiData)
+                val favoriteList = state.value.favorites.addUiData(
+                    userUiData.copy(isFavorite = true)
+                )
 
-            val favoriteList = favorites.value.addUiData(
-                userUiData.copy(isFavorite = true)
-            )
-            _favorites.emit(favoriteList)
-            favoriteLock.set(false)
+                updateState {
+                    it.copy(
+                        searches = searchList,
+                        favorites = favoriteList
+                    )
+                }
+            } catch (e: Exception) {
+                _effect.emit(MainEffect.ShowError(e))
+            } finally {
+                favoriteLock.set(false)
+            }
         }
     }
 
-    fun removeFavoriteData(userUiData: UserUiData) {
+    private fun handleRemoveFavorite(userUiData: UserUiData) {
         viewModelScope.launch {
             if (favoriteLock.getAndSet(true)) {
                 return@launch
             }
-            favoriteRepository.remove(userUiData.data)
+            try {
+                favoriteRepository.remove(userUiData.data)
 
-            val searchList = searches.value.unlike(userUiData)
-            _searches.emit(searchList)
+                val searchList = state.value.searches.unlike(userUiData)
+                val favoriteList = state.value.favorites.removeUiData(userUiData)
 
-            val favoriteList = favorites.value.removeUiData(userUiData)
-            _favorites.emit(favoriteList)
-            favoriteLock.set(false)
+                updateState {
+                    it.copy(
+                        searches = searchList,
+                        favorites = favoriteList
+                    )
+                }
+            } catch (e: Exception) {
+                _effect.emit(MainEffect.ShowError(e))
+            } finally {
+                favoriteLock.set(false)
+            }
         }
+    }
+
+    private fun updateState(update: (MainState) -> MainState) {
+        _state.value = update(_state.value)
     }
 }
