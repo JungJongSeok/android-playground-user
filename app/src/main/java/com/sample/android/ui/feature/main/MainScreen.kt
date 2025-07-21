@@ -42,6 +42,8 @@ import com.sample.android.ui.feature.detail.DetailActivity
 import com.sample.android.ui.feature.detail.model.DetailExtraData
 import com.sample.android.ui.feature.main.coponent.FavoritesTab
 import com.sample.android.ui.feature.main.coponent.SearchTab
+import com.sample.android.ui.feature.main.model.MainEffect
+import com.sample.android.ui.feature.main.model.MainIntent
 import com.sample.android.ui.feature.main.model.MainTab
 import com.sample.android.ui.feature.main.model.SearchTabData
 import com.sample.android.ui.feature.main.model.UserUiData
@@ -52,8 +54,7 @@ import com.sample.android.ui.theme.CommonTheme
 
 @Composable
 fun MainRoute(viewModel: MainViewModel = hiltViewModel()) {
-    val searches by viewModel.searches.collectAsState()
-    val favorites by viewModel.favorites.collectAsState()
+    val state by viewModel.state.collectAsState()
     val searchListState = rememberSaveable(saver = LazyListState.Saver) {
         LazyListState()
     }
@@ -63,19 +64,28 @@ fun MainRoute(viewModel: MainViewModel = hiltViewModel()) {
     val tabs = listOf(MainTab.SEARCH, MainTab.FAVORITE)
     var selectedTab by rememberSaveable { mutableIntStateOf(MainTab.SEARCH.index) }
     var query by rememberSaveable { mutableStateOf("") }
-    var isLoading by rememberSaveable { mutableStateOf(false) }
 
     val context = LocalContext.current
 
+    // Handle effects
     LaunchedEffect(Unit) {
-        viewModel.error
-            .collect {
-                if (it is NetworkCommonException) {
-                    val message = it.message ?: it.code.toString()
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                } else {
-                    val message = it.message ?: return@collect
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        viewModel.effect
+            .collect { effect ->
+                when (effect) {
+                    is MainEffect.ShowError -> {
+                        if (effect.exception is NetworkCommonException) {
+                            val message =
+                                effect.exception.message ?: effect.exception.code.toString()
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        } else {
+                            val message = effect.exception.message ?: return@collect
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
+                    is MainEffect.ScrollToTop -> {
+                        searchListState.scrollToItem(0, 0)
+                    }
                 }
             }
     }
@@ -87,27 +97,13 @@ fun MainRoute(viewModel: MainViewModel = hiltViewModel()) {
             lastVisible to totalItems
         }.collect { (lastVisible, total) ->
             if (lastVisible != null && lastVisible >= total - 1) {
-                viewModel.searchMore()
+                viewModel.processIntent(MainIntent.SearchMore())
             }
         }
     }
 
     LaunchedEffect(Unit) {
-        viewModel.scrollToTop
-            .collect {
-                searchListState.scrollToItem(0, 0)
-            }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.loading
-            .collect {
-                isLoading = it
-            }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.initialize()
+        viewModel.processIntent(MainIntent.Initialize)
     }
 
     Box(
@@ -119,14 +115,14 @@ fun MainRoute(viewModel: MainViewModel = hiltViewModel()) {
             onTabSelected = { selectedTab = it },
             query = query,
             onQueryChange = { query = it },
-            searches = searches,
-            favorites = favorites,
+            searches = state.searches,
+            favorites = state.favorites,
             searchListState = searchListState,
             favoriteGridState = favoriteGridState,
-            isLoading = isLoading,
-            onSearch = { viewModel.search(it) },
-            onAddFavorite = { viewModel.addFavoriteData(it) },
-            onRemoveFavorite = { viewModel.removeFavoriteData(it) },
+            isLoading = state.isLoading,
+            onSearch = { viewModel.processIntent(MainIntent.Search(it)) },
+            onAddFavorite = { viewModel.processIntent(MainIntent.AddFavorite(it)) },
+            onRemoveFavorite = { viewModel.processIntent(MainIntent.RemoveFavorite(it)) },
             tabs = tabs,
             startDetailActivity = { list, position ->
                 val intent = DetailActivity.intent(context, list, position)
@@ -137,7 +133,7 @@ fun MainRoute(viewModel: MainViewModel = hiltViewModel()) {
                         ActivityResultContracts.StartActivityForResult()
                     ) {
                         if (it.resultCode == RESULT_OK) {
-                            viewModel.restore()
+                            viewModel.processIntent(MainIntent.Restore)
                         }
                     }.launch(intent)
             }
