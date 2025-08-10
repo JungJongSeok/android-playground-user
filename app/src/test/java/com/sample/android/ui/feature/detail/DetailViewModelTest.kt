@@ -1,7 +1,9 @@
 package com.sample.android.ui.feature.detail
 
 import com.sample.android.data.UserMetaData
-import com.sample.android.repository.FavoriteRepository
+import com.sample.android.domain.entity.User
+import com.sample.android.domain.usecase.AddToFavoritesUseCase
+import com.sample.android.domain.usecase.RemoveFromFavoritesUseCase
 import com.sample.android.ui.feature.main.model.UserUiData
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -27,7 +29,8 @@ class DetailViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
-    private val favoriteRepository: FavoriteRepository = mockk()
+    private val addToFavoritesUseCase: AddToFavoritesUseCase = mockk()
+    private val removeFromFavoritesUseCase: RemoveFromFavoritesUseCase = mockk()
 
     private lateinit var viewModel: DetailViewModel
 
@@ -42,24 +45,21 @@ class DetailViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
 
-        coEvery { favoriteRepository.add(any()) } returns Unit
-        coEvery { favoriteRepository.remove(any()) } returns Unit
+        coEvery { addToFavoritesUseCase(any()) } returns Unit
+        coEvery { removeFromFavoritesUseCase(any()) } returns Unit
 
-        viewModel = DetailViewModel(favoriteRepository)
+        viewModel = DetailViewModel(addToFavoritesUseCase, removeFromFavoritesUseCase)
     }
 
     @Test
     fun `setUiData should update current list`() = testScope.runTest {
-        // Given
         val userUiDataList = listOf(
             UserUiData(isFavorite = false, data = testUserData),
             UserUiData(isFavorite = true, data = testUserData.copy(title = "Second User"))
         )
 
-        // When
         viewModel.setUiData(userUiDataList)
 
-        // Then
         val currentList = viewModel.currentList
         assertEquals(2, currentList.size)
         assertEquals(userUiDataList[0], currentList[0])
@@ -68,7 +68,6 @@ class DetailViewModelTest {
 
     @Test
     fun `setCurrentData should emit current data at position`() = testScope.runTest {
-        // Given
         val userUiDataList = listOf(
             UserUiData(isFavorite = false, data = testUserData),
             UserUiData(isFavorite = true, data = testUserData.copy(title = "Second User"))
@@ -80,11 +79,9 @@ class DetailViewModelTest {
             viewModel.currentData.toList(emissions)
         }
 
-        // When
         viewModel.setCurrentData(1)
         advanceUntilIdle()
 
-        // Then
         assertEquals(1, emissions.size)
         assertEquals(userUiDataList[1], emissions[0])
 
@@ -93,7 +90,6 @@ class DetailViewModelTest {
 
     @Test
     fun `setCurrentData with invalid position should not emit`() = testScope.runTest {
-        // Given
         val userUiDataList = listOf(
             UserUiData(isFavorite = false, data = testUserData)
         )
@@ -104,19 +100,16 @@ class DetailViewModelTest {
             viewModel.currentData.toList(emissions)
         }
 
-        // When
         viewModel.setCurrentData(10) // Invalid position
         advanceUntilIdle()
 
-        // Then
         assertEquals(0, emissions.size)
 
         job.cancel()
     }
 
     @Test
-    fun `likeFavoriteData should add to repository and update state`() = testScope.runTest {
-        // Given
+    fun `likeFavoriteData should add to use case and update state`() = testScope.runTest {
         val userUiData = UserUiData(isFavorite = false, data = testUserData)
         val userUiDataList = listOf(userUiData)
         viewModel.setUiData(userUiDataList)
@@ -126,12 +119,10 @@ class DetailViewModelTest {
             viewModel.currentData.toList(currentDataEmissions)
         }
 
-        // When
         viewModel.likeFavoriteData(userUiData)
         advanceUntilIdle()
 
-        // Then
-        coVerify { favoriteRepository.add(testUserData) }
+        coVerify { addToFavoritesUseCase(any<User>()) }
 
         val currentList = viewModel.currentList
         assertTrue(currentList[0].isFavorite)
@@ -146,8 +137,7 @@ class DetailViewModelTest {
     }
 
     @Test
-    fun `unlikeFavoriteData should remove from repository and update state`() = testScope.runTest {
-        // Given
+    fun `unlikeFavoriteData should remove from use case and update state`() = testScope.runTest {
         val userUiData = UserUiData(isFavorite = true, data = testUserData)
         val userUiDataList = listOf(userUiData)
         viewModel.setUiData(userUiDataList)
@@ -157,12 +147,10 @@ class DetailViewModelTest {
             viewModel.currentData.toList(currentDataEmissions)
         }
 
-        // When
         viewModel.unlikeFavoriteData(userUiData)
         advanceUntilIdle()
 
-        // Then
-        coVerify { favoriteRepository.remove(testUserData) }
+        coVerify { removeFromFavoritesUseCase(any<User>()) }
 
         val currentList = viewModel.currentList
         assertFalse(currentList[0].isFavorite)
@@ -178,7 +166,6 @@ class DetailViewModelTest {
 
     @Test
     fun `concurrent favorite operations should be handled safely`() = testScope.runTest {
-        // Given
         val userUiData = UserUiData(isFavorite = false, data = testUserData)
         val userUiDataList = listOf(userUiData)
         viewModel.setUiData(userUiDataList)
@@ -188,7 +175,7 @@ class DetailViewModelTest {
         advanceUntilIdle()
 
         // Then - verify first operation completed
-        coVerify(exactly = 1) { favoriteRepository.add(testUserData) }
+        coVerify(exactly = 1) { addToFavoritesUseCase(any<User>()) }
         assertTrue(viewModel.currentList[0].isFavorite)
 
         // When - second operation
@@ -196,7 +183,7 @@ class DetailViewModelTest {
         advanceUntilIdle()
 
         // Then - verify second operation completed
-        coVerify(exactly = 1) { favoriteRepository.remove(testUserData) }
+        coVerify(exactly = 1) { removeFromFavoritesUseCase(any<User>()) }
         assertFalse(viewModel.currentList[0].isFavorite)
     }
 }

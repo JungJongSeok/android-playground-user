@@ -12,9 +12,6 @@ import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 
-/**
- * Unit tests for AddToFavoritesUseCase
- */
 class AddToFavoritesUseCaseTest {
 
     private lateinit var favoriteRepository: FavoriteRepository
@@ -37,19 +34,15 @@ class AddToFavoritesUseCaseTest {
 
     @Test
     fun `invoke adds user to favorites successfully`() = runTest {
-        // Given
         coJustRun { favoriteRepository.addToFavorites(sampleUser) }
 
-        // When
         addToFavoritesUseCase(sampleUser)
 
-        // Then
         coVerify { favoriteRepository.addToFavorites(sampleUser) }
     }
 
     @Test
     fun `invoke adds different users to favorites`() = runTest {
-        // Given
         val user1 = sampleUser
         val user2 = User(
             id = 2L,
@@ -63,35 +56,28 @@ class AddToFavoritesUseCaseTest {
         coJustRun { favoriteRepository.addToFavorites(user1) }
         coJustRun { favoriteRepository.addToFavorites(user2) }
 
-        // When
         addToFavoritesUseCase(user1)
         addToFavoritesUseCase(user2)
 
-        // Then
         coVerify { favoriteRepository.addToFavorites(user1) }
         coVerify { favoriteRepository.addToFavorites(user2) }
     }
 
     @Test
     fun `invoke with same user multiple times calls repository each time`() = runTest {
-        // Given
         coJustRun { favoriteRepository.addToFavorites(sampleUser) }
 
-        // When
         addToFavoritesUseCase(sampleUser)
         addToFavoritesUseCase(sampleUser)
 
-        // Then
         coVerify(exactly = 2) { favoriteRepository.addToFavorites(sampleUser) }
     }
 
     @Test
     fun `invoke with repository exception propagates exception`() = runTest {
-        // Given
         val exception = RuntimeException("Database error")
         coEvery { favoriteRepository.addToFavorites(sampleUser) } throws exception
 
-        // When & Then
         try {
             addToFavoritesUseCase(sampleUser)
             fail("Expected RuntimeException")
@@ -103,7 +89,6 @@ class AddToFavoritesUseCaseTest {
 
     @Test
     fun `invoke passes user data correctly to repository`() = runTest {
-        // Given
         val specificUser = User(
             id = 12345L,
             login = "specific_user",
@@ -114,10 +99,8 @@ class AddToFavoritesUseCaseTest {
         )
         coJustRun { favoriteRepository.addToFavorites(specificUser) }
 
-        // When
         addToFavoritesUseCase(specificUser)
 
-        // Then
         coVerify {
             favoriteRepository.addToFavorites(
                 match { user ->
@@ -134,7 +117,6 @@ class AddToFavoritesUseCaseTest {
 
     @Test
     fun `invoke with user having special characters works correctly`() = runTest {
-        // Given
         val specialUser = User(
             id = 999L,
             login = "user-with_special@chars",
@@ -145,16 +127,13 @@ class AddToFavoritesUseCaseTest {
         )
         coJustRun { favoriteRepository.addToFavorites(specialUser) }
 
-        // When
         addToFavoritesUseCase(specialUser)
 
-        // Then
         coVerify { favoriteRepository.addToFavorites(specialUser) }
     }
 
     @Test
     fun `invoke with minimum score user works correctly`() = runTest {
-        // Given
         val minScoreUser = User(
             id = 100L,
             login = "minuser",
@@ -165,16 +144,13 @@ class AddToFavoritesUseCaseTest {
         )
         coJustRun { favoriteRepository.addToFavorites(minScoreUser) }
 
-        // When
         addToFavoritesUseCase(minScoreUser)
 
-        // Then
         coVerify { favoriteRepository.addToFavorites(minScoreUser) }
     }
 
     @Test
     fun `invoke with maximum score user works correctly`() = runTest {
-        // Given
         val maxScoreUser = User(
             id = 200L,
             login = "maxuser",
@@ -185,10 +161,8 @@ class AddToFavoritesUseCaseTest {
         )
         coJustRun { favoriteRepository.addToFavorites(maxScoreUser) }
 
-        // When
         addToFavoritesUseCase(maxScoreUser)
 
-        // Then
         coVerify { favoriteRepository.addToFavorites(maxScoreUser) }
     }
 }

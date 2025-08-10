@@ -12,9 +12,6 @@ import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 
-/**
- * Unit tests for SearchUsersUseCase
- */
 class SearchUsersUseCaseTest {
 
     private lateinit var searchRepository: SearchRepository
@@ -43,15 +40,12 @@ class SearchUsersUseCaseTest {
 
     @Test
     fun `invoke with valid query and page returns search result`() = runTest {
-        // Given
         val query = "kotlin"
         val page = 1
         coEvery { searchRepository.searchUsers(query, page) } returns sampleSearchResult
 
-        // When
         val result = searchUsersUseCase(query, page)
 
-        // Then
         assertEquals(sampleSearchResult, result)
         assertEquals(1, result.users.size)
         assertEquals(sampleUser, result.users.first())
@@ -60,7 +54,6 @@ class SearchUsersUseCaseTest {
 
     @Test
     fun `invoke with different pages works correctly`() = runTest {
-        // Given
         val query = "android"
         val page1 = 1
         val page2 = 2
@@ -70,11 +63,9 @@ class SearchUsersUseCaseTest {
         coEvery { searchRepository.searchUsers(query, page1) } returns result1
         coEvery { searchRepository.searchUsers(query, page2) } returns result2
 
-        // When
         val actualResult1 = searchUsersUseCase(query, page1)
         val actualResult2 = searchUsersUseCase(query, page2)
 
-        // Then
         assertEquals(result1, actualResult1)
         assertEquals(result2, actualResult2)
         coVerify { searchRepository.searchUsers(query, page1) }
@@ -83,11 +74,9 @@ class SearchUsersUseCaseTest {
 
     @Test
     fun `invoke with blank query throws IllegalArgumentException`() = runTest {
-        // Given
         val blankQuery = ""
         val page = 1
 
-        // When & Then
         try {
             searchUsersUseCase(blankQuery, page)
             fail("Expected IllegalArgumentException")
@@ -98,11 +87,9 @@ class SearchUsersUseCaseTest {
 
     @Test
     fun `invoke with whitespace only query throws IllegalArgumentException`() = runTest {
-        // Given
         val whitespaceQuery = "   "
         val page = 1
 
-        // When & Then
         try {
             searchUsersUseCase(whitespaceQuery, page)
             fail("Expected IllegalArgumentException")
@@ -113,11 +100,9 @@ class SearchUsersUseCaseTest {
 
     @Test
     fun `invoke with zero page throws IllegalArgumentException`() = runTest {
-        // Given
         val query = "test"
         val invalidPage = 0
 
-        // When & Then
         try {
             searchUsersUseCase(query, invalidPage)
             fail("Expected IllegalArgumentException")
@@ -128,11 +113,9 @@ class SearchUsersUseCaseTest {
 
     @Test
     fun `invoke with negative page throws IllegalArgumentException`() = runTest {
-        // Given
         val query = "test"
         val invalidPage = -1
 
-        // When & Then
         try {
             searchUsersUseCase(query, invalidPage)
             fail("Expected IllegalArgumentException")
@@ -143,11 +126,9 @@ class SearchUsersUseCaseTest {
 
     @Test
     fun `invoke validates input before calling repository`() = runTest {
-        // Given
         val blankQuery = ""
         val page = 1
 
-        // When & Then
         try {
             searchUsersUseCase(blankQuery, page)
             fail("Expected IllegalArgumentException")
@@ -159,13 +140,11 @@ class SearchUsersUseCaseTest {
 
     @Test
     fun `invoke with repository exception propagates exception`() = runTest {
-        // Given
         val query = "test"
         val page = 1
         val exception = RuntimeException("Network error")
         coEvery { searchRepository.searchUsers(query, page) } throws exception
 
-        // When & Then
         try {
             searchUsersUseCase(query, page)
             fail("Expected RuntimeException")
@@ -177,77 +156,62 @@ class SearchUsersUseCaseTest {
 
     @Test
     fun `invoke with special characters in query works correctly`() = runTest {
-        // Given
         val specialQuery = "kotlin-android@#$"
         val page = 1
         coEvery { searchRepository.searchUsers(specialQuery, page) } returns sampleSearchResult
 
-        // When
         val result = searchUsersUseCase(specialQuery, page)
 
-        // Then
         assertEquals(sampleSearchResult, result)
         coVerify { searchRepository.searchUsers(specialQuery, page) }
     }
 
     @Test
     fun `invoke with large page numbers works correctly`() = runTest {
-        // Given
         val query = "test"
         val largePage = 1000
         coEvery { searchRepository.searchUsers(query, largePage) } returns sampleSearchResult
 
-        // When
         val result = searchUsersUseCase(query, largePage)
 
-        // Then
         assertEquals(sampleSearchResult, result)
         coVerify { searchRepository.searchUsers(query, largePage) }
     }
 
     @Test
     fun `invoke with unicode query works correctly`() = runTest {
-        // Given
         val unicodeQuery = "코틀린 안드로이드 "
         val page = 1
         coEvery { searchRepository.searchUsers(unicodeQuery, page) } returns sampleSearchResult
 
-        // When
         val result = searchUsersUseCase(unicodeQuery, page)
 
-        // Then
         assertEquals(sampleSearchResult, result)
         coVerify { searchRepository.searchUsers(unicodeQuery, page) }
     }
 
     @Test
     fun `invoke with very long query works correctly`() = runTest {
-        // Given
         val longQuery = "a".repeat(1000)
         val page = 1
         coEvery { searchRepository.searchUsers(longQuery, page) } returns sampleSearchResult
 
-        // When
         val result = searchUsersUseCase(longQuery, page)
 
-        // Then
         assertEquals(sampleSearchResult, result)
         coVerify { searchRepository.searchUsers(longQuery, page) }
     }
 
     @Test
     fun `invoke with mixed whitespace in query trims correctly`() = runTest {
-        // Given
         val queryWithSpaces = " kotlin android "
         val page = 1
 
         // The usecase passes the query as-is to repository (no trimming in usecase)
         coEvery { searchRepository.searchUsers(queryWithSpaces, page) } returns sampleSearchResult
 
-        // When
         val result = searchUsersUseCase(queryWithSpaces, page)
 
-        // Then
         assertEquals(sampleSearchResult, result)
         coVerify { searchRepository.searchUsers(queryWithSpaces, page) }
     }

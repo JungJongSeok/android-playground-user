@@ -24,32 +24,26 @@ class UserUiDataTest {
 
     @Test
     fun `removeUiData should remove matching item from list`() {
-        // Given
         val userUiData1 = UserUiData(isFavorite = false, data = testUserData1)
         val userUiData2 = UserUiData(isFavorite = true, data = testUserData2)
         val list = listOf(userUiData1, userUiData2)
 
-        // When
         val result = list.removeUiData(userUiData1)
 
-        // Then
         assertEquals(1, result.size)
         assertEquals(userUiData2, result[0])
     }
 
     @Test
     fun `removeUiData should return original list if item not found`() {
-        // Given
         val userUiData1 = UserUiData(isFavorite = false, data = testUserData1)
         val userUiData2 = UserUiData(isFavorite = true, data = testUserData2)
         val nonExistentItem =
             UserUiData(isFavorite = false, data = testUserData1.copy(title = "Non-existent"))
         val list = listOf(userUiData1, userUiData2)
 
-        // When
         val result = list.removeUiData(nonExistentItem)
 
-        // Then
         assertEquals(2, result.size)
         assertEquals(userUiData1, result[0])
         assertEquals(userUiData2, result[1])
@@ -57,15 +51,12 @@ class UserUiDataTest {
 
     @Test
     fun `addUiData should append item to list`() {
-        // Given
         val userUiData1 = UserUiData(isFavorite = false, data = testUserData1)
         val userUiData2 = UserUiData(isFavorite = true, data = testUserData2)
         val list = listOf(userUiData1)
 
-        // When
         val result = list.addUiData(userUiData2)
 
-        // Then
         assertEquals(2, result.size)
         assertEquals(userUiData1, result[0])
         assertEquals(userUiData2, result[1])
@@ -73,15 +64,12 @@ class UserUiDataTest {
 
     @Test
     fun `like should change favorite status to true for matching item`() {
-        // Given
         val userUiData1 = UserUiData(isFavorite = false, data = testUserData1)
         val userUiData2 = UserUiData(isFavorite = false, data = testUserData2)
         val list = listOf(userUiData1, userUiData2)
 
-        // When
         val result = list.like(userUiData1)
 
-        // Then
         assertEquals(2, result.size)
         assertTrue(result[0].isFavorite)
         assertFalse(result[1].isFavorite)
@@ -91,15 +79,12 @@ class UserUiDataTest {
 
     @Test
     fun `unlike should change favorite status to false for matching item`() {
-        // Given
         val userUiData1 = UserUiData(isFavorite = true, data = testUserData1)
         val userUiData2 = UserUiData(isFavorite = true, data = testUserData2)
         val list = listOf(userUiData1, userUiData2)
 
-        // When
         val result = list.unlike(userUiData1)
 
-        // Then
         assertEquals(2, result.size)
         assertFalse(result[0].isFavorite)
         assertTrue(result[1].isFavorite)
@@ -109,15 +94,12 @@ class UserUiDataTest {
 
     @Test
     fun `like should not change other items`() {
-        // Given
         val userUiData1 = UserUiData(isFavorite = false, data = testUserData1)
         val userUiData2 = UserUiData(isFavorite = true, data = testUserData2)
         val list = listOf(userUiData1, userUiData2)
 
-        // When
         val result = list.like(userUiData1)
 
-        // Then
         assertEquals(2, result.size)
         assertTrue(result[0].isFavorite)
         assertTrue(result[1].isFavorite) // Should remain unchanged
@@ -125,15 +107,12 @@ class UserUiDataTest {
 
     @Test
     fun `unlike should not change other items`() {
-        // Given
         val userUiData1 = UserUiData(isFavorite = true, data = testUserData1)
         val userUiData2 = UserUiData(isFavorite = false, data = testUserData2)
         val list = listOf(userUiData1, userUiData2)
 
-        // When
         val result = list.unlike(userUiData1)
 
-        // Then
         assertEquals(2, result.size)
         assertFalse(result[0].isFavorite)
         assertFalse(result[1].isFavorite) // Should remain unchanged
@@ -141,11 +120,9 @@ class UserUiDataTest {
 
     @Test
     fun `operations on empty list should work correctly`() {
-        // Given
         val emptyList = emptyList<UserUiData>()
         val userUiData = UserUiData(isFavorite = false, data = testUserData1)
 
-        // When & Then
         assertEquals(0, emptyList.removeUiData(userUiData).size)
         assertEquals(1, emptyList.addUiData(userUiData).size)
         assertEquals(0, emptyList.like(userUiData).size)

@@ -76,22 +76,18 @@ class DetailAdapterTest {
         // Given & When
         val newAdapter = DetailAdapter(property)
 
-        // Then
         assertNotNull(newAdapter)
         assertEquals(0, newAdapter.itemCount)
     }
 
     @Test
     fun `onCreateViewHolder should return ViewHolder with correct binding`() {
-        // Given
         val context = RuntimeEnvironment.getApplication()
         val parent = mockk<ViewGroup>(relaxed = true)
         every { parent.context } returns context
 
-        // When
         val viewHolder = adapter.onCreateViewHolder(parent, 0)
 
-        // Then
         assertNotNull(viewHolder)
         assertNotNull(viewHolder.binding)
         assertTrue(viewHolder is DetailAdapter.ViewHolder)
@@ -99,7 +95,6 @@ class DetailAdapterTest {
 
     @Test
     fun `onBindViewHolder should bind data correctly`() {
-        // Given
         val context = RuntimeEnvironment.getApplication()
         val parent = mockk<ViewGroup>(relaxed = true)
         every { parent.context } returns context
@@ -109,17 +104,14 @@ class DetailAdapterTest {
 
         adapter.submitList(userUiDataList)
 
-        // When
         adapter.onBindViewHolder(viewHolder, 0)
 
-        // Then
         verify { binding.requestManager = requestManager }
         verify { binding.thumbnail = testUserMetaData1.thumbnail }
     }
 
     @Test
     fun `onBindViewHolder should not bind data when position is negative`() {
-        // Given
         val context = RuntimeEnvironment.getApplication()
         val parent = mockk<ViewGroup>(relaxed = true)
         every { parent.context } returns context
@@ -129,35 +121,27 @@ class DetailAdapterTest {
 
         adapter.submitList(userUiDataList)
 
-        // When
         adapter.onBindViewHolder(viewHolder, -1)
 
-        // Then
         verify(exactly = 0) { binding.requestManager = any() }
         verify(exactly = 0) { binding.thumbnail = any() }
     }
 
     @Test
     fun `submitList should update adapter item count`() {
-        // Given
         assertEquals(0, adapter.itemCount)
 
-        // When
         adapter.submitList(userUiDataList)
 
-        // Then
         assertEquals(2, adapter.itemCount)
     }
 
     @Test
     fun `currentList should return correct item at position`() {
-        // Given
         adapter.submitList(userUiDataList)
 
-        // When
         val item = adapter.currentList[0]
 
-        // Then
         assertEquals(userUiDataList[0], item)
         assertEquals(testUserMetaData1, item.data)
         assertTrue(item.isFavorite)
@@ -165,7 +149,6 @@ class DetailAdapterTest {
 
     @Test
     fun `adapter should handle list updates correctly`() {
-        // Given
         adapter.submitList(userUiDataList)
 
         // When - 리스트 업데이트
@@ -181,7 +164,6 @@ class DetailAdapterTest {
 
     @Test
     fun `adapter should handle multiple data bindings correctly`() {
-        // Given
         val context = RuntimeEnvironment.getApplication()
         val parent = mockk<ViewGroup>(relaxed = true)
         every { parent.context } returns context
@@ -193,11 +175,9 @@ class DetailAdapterTest {
 
         adapter.submitList(userUiDataList)
 
-        // When
         adapter.onBindViewHolder(viewHolder1, 0)
         adapter.onBindViewHolder(viewHolder2, 1)
 
-        // Then
         verify { binding1.requestManager = requestManager }
         verify { binding1.thumbnail = testUserMetaData1.thumbnail }
         verify { binding2.requestManager = requestManager }
@@ -206,25 +186,19 @@ class DetailAdapterTest {
 
     @Test
     fun `empty list should work correctly`() {
-        // Given
         val emptyList = emptyList<UserUiData>()
 
-        // When
         adapter.submitList(emptyList)
 
-        // Then
         assertEquals(0, adapter.itemCount)
     }
 
     @Test
     fun `single item list should work correctly`() {
-        // Given
         val singleItemList = listOf(UserUiData(isFavorite = true, data = testUserMetaData1))
 
-        // When
         adapter.submitList(singleItemList)
 
-        // Then
         assertEquals(1, adapter.itemCount)
         assertEquals(singleItemList[0], adapter.currentList[0])
     }

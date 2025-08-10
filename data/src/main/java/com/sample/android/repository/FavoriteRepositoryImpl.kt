@@ -10,10 +10,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-/**
- * Data layer implementation of FavoriteRepository
- * Implements domain repository interface and handles data persistence
- */
 class FavoriteRepositoryImpl @Inject constructor(
     private val preferencesModule: PreferencesModule,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
@@ -21,14 +17,12 @@ class FavoriteRepositoryImpl @Inject constructor(
 
     override suspend fun getFavorites(): List<User> {
         return withContext(dispatcher) {
-            // Use extension function to convert data models to domain entities
             preferencesModule.favorites.map { it.toUser() }
         }
     }
 
     override suspend fun addToFavorites(user: User) {
         withContext(dispatcher) {
-            // Use extension function to convert domain entity to data model
             val userMetaData = user.toUserMetaData()
             preferencesModule.favorites += listOf(userMetaData)
         }

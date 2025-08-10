@@ -9,10 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-/**
- * Data layer implementation of SearchRepository
- * Implements domain repository interface and handles data operations
- */
 class SearchRepositoryImpl @Inject constructor(
     private val userService: UserService
 ) : SearchRepository {
@@ -21,8 +17,6 @@ class SearchRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             val request = UserRequest(query, page)
             val response = userService.search(request)
-
-            // Use extension function to convert network response to domain entity
             response.toUserSearchResult()
         }
     }

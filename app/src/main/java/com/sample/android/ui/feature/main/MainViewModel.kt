@@ -34,11 +34,6 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
-/**
- * Clean Architecture MVI ViewModel for Main screen
- * Uses Use Cases to handle business logic
- * Processes Intents, emits States and Effects
- */
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val searchUsersUseCase: SearchUsersUseCase,
@@ -47,22 +42,16 @@ class MainViewModel @Inject constructor(
     private val removeFromFavoritesUseCase: RemoveFromFavoritesUseCase
 ) : ViewModel() {
 
-    // State
     private val _state = MutableStateFlow(MainState.initial())
     val state = _state.asStateFlow()
 
-    // Effect
     private val _effect = MutableSharedFlow<MainEffect>()
     val effect = _effect.asSharedFlow()
 
-    // Search job for cancellation
     private var searchJob: Job? = null
     private val searchLock = AtomicBoolean(false)
     private val favoriteLock = AtomicBoolean(false)
 
-    /**
-     * Process user intents
-     */
     fun processIntent(intent: MainIntent) {
         when (intent) {
             is MainIntent.Initialize -> handleInitialize()

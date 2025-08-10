@@ -45,26 +45,21 @@ class NetworkInterceptorContentProviderTest {
 
     @Test
     fun onCreate_shouldInitializeInterceptorModule() {
-        // Given
         val contextField: Field =
             android.content.ContentProvider::class.java.getDeclaredField("mContext")
         contextField.isAccessible = true
         contextField.set(contentProvider, mockApplication)
 
-        // When
         val result = contentProvider.onCreate()
 
-        // Then
         assertTrue(result)
         verify { InterceptorModule.initializeWithDefaults(mockApplication) }
     }
 
     @Test
     fun insert_shouldThrowUnsupportedOperationException() {
-        // Given
         val contentValues = ContentValues()
 
-        // When & Then
         assertThrows(UnsupportedOperationException::class.java) {
             contentProvider.insert(mockUri, contentValues)
         }
@@ -72,13 +67,11 @@ class NetworkInterceptorContentProviderTest {
 
     @Test
     fun query_shouldThrowUnsupportedOperationException() {
-        // Given
         val projection = arrayOf("column1")
         val selection = "selection"
         val selectionArgs = arrayOf("arg1")
         val sortOrder = "sortOrder"
 
-        // When & Then
         assertThrows(UnsupportedOperationException::class.java) {
             contentProvider.query(mockUri, projection, selection, selectionArgs, sortOrder)
         }
@@ -86,12 +79,10 @@ class NetworkInterceptorContentProviderTest {
 
     @Test
     fun update_shouldThrowUnsupportedOperationException() {
-        // Given
         val contentValues = ContentValues()
         val selection = "selection"
         val selectionArgs = arrayOf("arg1")
 
-        // When & Then
         assertThrows(UnsupportedOperationException::class.java) {
             contentProvider.update(mockUri, contentValues, selection, selectionArgs)
         }
@@ -99,11 +90,9 @@ class NetworkInterceptorContentProviderTest {
 
     @Test
     fun delete_shouldThrowUnsupportedOperationException() {
-        // Given
         val selection = "selection"
         val selectionArgs = arrayOf("arg1")
 
-        // When & Then
         assertThrows(UnsupportedOperationException::class.java) {
             contentProvider.delete(mockUri, selection, selectionArgs)
         }
@@ -111,7 +100,6 @@ class NetworkInterceptorContentProviderTest {
 
     @Test
     fun getType_shouldThrowUnsupportedOperationException() {
-        // When & Then
         assertThrows(UnsupportedOperationException::class.java) {
             contentProvider.getType(mockUri)
         }

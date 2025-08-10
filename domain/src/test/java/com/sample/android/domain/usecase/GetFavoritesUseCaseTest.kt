@@ -12,9 +12,6 @@ import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 
-/**
- * Unit tests for GetFavoritesUseCase
- */
 class GetFavoritesUseCaseTest {
 
     private lateinit var favoriteRepository: FavoriteRepository
@@ -46,14 +43,11 @@ class GetFavoritesUseCaseTest {
 
     @Test
     fun `invoke returns list of favorite users`() = runTest {
-        // Given
         val favoriteUsers = listOf(sampleUser1, sampleUser2)
         coEvery { favoriteRepository.getFavorites() } returns favoriteUsers
 
-        // When
         val result = getFavoritesUseCase()
 
-        // Then
         assertEquals(favoriteUsers, result)
         assertEquals(2, result.size)
         assertEquals(sampleUser1, result[0])
@@ -63,14 +57,11 @@ class GetFavoritesUseCaseTest {
 
     @Test
     fun `invoke returns empty list when no favorites exist`() = runTest {
-        // Given
         val emptyFavorites = emptyList<User>()
         coEvery { favoriteRepository.getFavorites() } returns emptyFavorites
 
-        // When
         val result = getFavoritesUseCase()
 
-        // Then
         assertEquals(emptyFavorites, result)
         assertTrue(result.isEmpty())
         coVerify { favoriteRepository.getFavorites() }
@@ -78,14 +69,11 @@ class GetFavoritesUseCaseTest {
 
     @Test
     fun `invoke returns single favorite user correctly`() = runTest {
-        // Given
         val singleFavorite = listOf(sampleUser1)
         coEvery { favoriteRepository.getFavorites() } returns singleFavorite
 
-        // When
         val result = getFavoritesUseCase()
 
-        // Then
         assertEquals(singleFavorite, result)
         assertEquals(1, result.size)
         assertEquals(sampleUser1, result.first())
@@ -94,11 +82,9 @@ class GetFavoritesUseCaseTest {
 
     @Test
     fun `invoke with repository exception propagates exception`() = runTest {
-        // Given
         val exception = RuntimeException("Database error")
         coEvery { favoriteRepository.getFavorites() } throws exception
 
-        // When & Then
         try {
             getFavoritesUseCase()
             fail("Expected RuntimeException")
@@ -110,15 +96,12 @@ class GetFavoritesUseCaseTest {
 
     @Test
     fun `invoke multiple times calls repository each time`() = runTest {
-        // Given
         val favoriteUsers = listOf(sampleUser1)
         coEvery { favoriteRepository.getFavorites() } returns favoriteUsers
 
-        // When
         val result1 = getFavoritesUseCase()
         val result2 = getFavoritesUseCase()
 
-        // Then
         assertEquals(favoriteUsers, result1)
         assertEquals(favoriteUsers, result2)
         coVerify(exactly = 2) { favoriteRepository.getFavorites() }
@@ -126,14 +109,11 @@ class GetFavoritesUseCaseTest {
 
     @Test
     fun `invoke returns immutable list`() = runTest {
-        // Given
         val favoriteUsers = listOf(sampleUser1, sampleUser2)
         coEvery { favoriteRepository.getFavorites() } returns favoriteUsers
 
-        // When
         val result = getFavoritesUseCase()
 
-        // Then
         assertEquals(favoriteUsers, result)
         // Verify it's a proper list implementation
         assertTrue(result is List<User>)
@@ -142,14 +122,11 @@ class GetFavoritesUseCaseTest {
 
     @Test
     fun `invoke preserves user data integrity`() = runTest {
-        // Given
         val favoriteUsers = listOf(sampleUser1)
         coEvery { favoriteRepository.getFavorites() } returns favoriteUsers
 
-        // When
         val result = getFavoritesUseCase()
 
-        // Then
         val returnedUser = result.first()
         assertEquals(sampleUser1.id, returnedUser.id)
         assertEquals(sampleUser1.login, returnedUser.login)

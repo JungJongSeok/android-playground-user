@@ -73,7 +73,6 @@ class UserServiceTest {
     @Test
     fun `search should call NetworkModule with correct parameters and return UserResponse`() =
         runTest {
-            // Given
             coEvery {
                 NetworkModule.call<UserResponse>(
                     NetworkModule.Method.GET,
@@ -82,10 +81,8 @@ class UserServiceTest {
                 )
             } returns mockResponse
 
-            // When
             val result = userService.search(mockRequest)
 
-            // Then
             assertEquals(mockResponse, result)
             coVerify {
                 NetworkModule.call<UserResponse>(
@@ -98,7 +95,6 @@ class UserServiceTest {
 
     @Test
     fun `search should handle NetworkCommonException with network failure`() = runTest {
-        // Given
         val networkException = NetworkCommonException(
             code = NetworkCommonException.CODE_FAILED_NETWORK,
             message = "Network failure",
@@ -113,7 +109,6 @@ class UserServiceTest {
             )
         } throws networkException
 
-        // When & Then
         try {
             userService.search(mockRequest)
             assertTrue("Expected NetworkCommonException to be thrown", false)
@@ -126,7 +121,6 @@ class UserServiceTest {
 
     @Test
     fun `search should handle NetworkCommonException with JSON parsing failure`() = runTest {
-        // Given
         val jsonException = NetworkCommonException(
             code = NetworkCommonException.CODE_FAILED_JSON_PARSING,
             message = "JSON parsing failed"
@@ -140,7 +134,6 @@ class UserServiceTest {
             )
         } throws jsonException
 
-        // When & Then
         try {
             userService.search(mockRequest)
             assertTrue("Expected NetworkCommonException to be thrown", false)
@@ -152,7 +145,6 @@ class UserServiceTest {
 
     @Test
     fun `search should handle NetworkCommonException with null pointer error`() = runTest {
-        // Given
         val nullPointerException = NetworkCommonException(
             code = NetworkCommonException.CODE_NULL_POINTER_ERROR,
             message = "Null pointer error"
@@ -166,7 +158,6 @@ class UserServiceTest {
             )
         } throws nullPointerException
 
-        // When & Then
         try {
             userService.search(mockRequest)
             assertTrue("Expected NetworkCommonException to be thrown", false)
@@ -178,7 +169,6 @@ class UserServiceTest {
 
     @Test
     fun `search should handle empty response`() = runTest {
-        // Given
         val emptyResponse = UserResponse(
             info = null,
             results = null
@@ -192,10 +182,8 @@ class UserServiceTest {
             )
         } returns emptyResponse
 
-        // When
         val result = userService.search(mockRequest)
 
-        // Then
         assertEquals(emptyResponse, result)
         assertEquals(null, result.info)
         assertEquals(null, result.results)
@@ -203,7 +191,6 @@ class UserServiceTest {
 
     @Test
     fun `search should handle request with different parameters`() = runTest {
-        // Given
         val customRequest = UserRequest(
             seed = "custom-seed",
             page = 2,
@@ -218,10 +205,8 @@ class UserServiceTest {
             )
         } returns mockResponse
 
-        // When
         val result = userService.search(customRequest)
 
-        // Then
         assertEquals(mockResponse, result)
         coVerify {
             NetworkModule.call<UserResponse>(

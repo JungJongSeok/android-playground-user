@@ -5,14 +5,10 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/**
- * Unit tests for User domain entity
- */
 class UserTest {
 
     @Test
     fun `user entity creation with all properties`() {
-        // Given
         val id = 12345L
         val login = "testuser"
         val avatarUrl = "https://avatars.githubusercontent.com/u/12345"
@@ -20,7 +16,6 @@ class UserTest {
         val type = "User"
         val score = 85.5
 
-        // When
         val user = User(
             id = id,
             login = login,
@@ -30,7 +25,6 @@ class UserTest {
             score = score
         )
 
-        // Then
         assertEquals(id, user.id)
         assertEquals(login, user.login)
         assertEquals(avatarUrl, user.avatarUrl)
@@ -41,7 +35,6 @@ class UserTest {
 
     @Test
     fun `user entity equality test`() {
-        // Given
         val user1 = User(
             id = 1L,
             login = "user1",
@@ -67,7 +60,6 @@ class UserTest {
             score = 85.0
         )
 
-        // Then
         assertEquals(user1, user2)
         assertNotEquals(user1, user3)
         assertEquals(user1.hashCode(), user2.hashCode())
@@ -76,7 +68,6 @@ class UserTest {
 
     @Test
     fun `user entity toString contains all properties`() {
-        // Given
         val user = User(
             id = 123L,
             login = "testuser",
@@ -86,10 +77,8 @@ class UserTest {
             score = 95.0
         )
 
-        // When
         val toString = user.toString()
 
-        // Then
         assertTrue(toString.contains("123"))
         assertTrue(toString.contains("testuser"))
         assertTrue(toString.contains("avatar"))
@@ -100,7 +89,6 @@ class UserTest {
 
     @Test
     fun `user entity copy function works correctly`() {
-        // Given
         val originalUser = User(
             id = 1L,
             login = "original",
@@ -110,10 +98,8 @@ class UserTest {
             score = 80.0
         )
 
-        // When
         val copiedUser = originalUser.copy(login = "modified", score = 85.0)
 
-        // Then
         assertEquals(originalUser.id, copiedUser.id)
         assertEquals("modified", copiedUser.login)
         assertEquals(originalUser.avatarUrl, copiedUser.avatarUrl)

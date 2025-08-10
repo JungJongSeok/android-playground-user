@@ -2,9 +2,6 @@ package com.sample.android.ui.feature.main.model
 
 import androidx.annotation.Keep
 
-/**
- * Represents the complete UI state for the Main screen
- */
 @Keep
 data class MainState(
     val searches: List<SearchTabData> = emptyList(),
