@@ -15,6 +15,9 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 
+/**
+ * Unit tests for SearchRepositoryImpl
+ */
 class SearchRepositoryTest {
     @MockK(relaxed = true)
     lateinit var userService: UserService
@@ -28,101 +31,155 @@ class SearchRepositoryTest {
     }
 
     @Test
-    fun `user documents are empty, users is empty and isEnd true`() =
+    fun `searchUsers returns empty result when no users found`() =
         runTest {
-            val userRequest = UserRequest(seed = "seed", page = 1)
+            // Given
+            val query = "test"
+            val page = 1
+            val userRequest = UserRequest(seed = query, page = page)
             val response = UserResponse(
                 info = UserResponseInfo(
                     page = 1,
-                    results = 1,
-                    seed = "seed",
+                    results = 0,
+                    seed = "test",
                     version = "version"
                 ),
                 results = emptyList()
             )
             coEvery { userService.search(userRequest) } returns response
 
-            val result = repository.searchItem(userRequest)
+            // When
+            val result = repository.searchUsers(query, page)
 
+            // Then
             assertTrue(result.users.isEmpty())
+            assertEquals(0, result.totalCount)
         }
 
     @Test
-    fun `user have documents, they are merged and sorted by timestamp`() = runTest {
-        val userRequest = UserRequest(seed = "test", page = 1)
+    fun `searchUsers returns users when found`() = runTest {
+        // Given
+        val query = "test"
+        val page = 1
+        val userRequest = UserRequest(seed = query, page = page)
 
-        val data1 = UserResult(
-            cell = null,
-            dob = UserDob(age = null, date = "2023-05-21T09:42:29.000+09:00"),
-            email = "user1@example.com",
-            gender = null,
+        val userResult = UserResult(
+            cell = "123-456-789",
+            dob = UserDob(age = 30, date = "2023-05-21T09:42:29.000+09:00"),
+            email = "user@example.com",
+            gender = "male",
             id = null,
             location = null,
             login = null,
             name = null,
             nat = null,
-            phone = null,
-            picture = null,
-            registered = null
-        )
-        val data2 = UserResult(
-            cell = null,
-            dob = UserDob(age = null, date = "2023-05-18T09:42:29.000+09:00"),
-            email = "user2@example.com",
-            gender = null,
-            id = null,
-            location = null,
-            login = null,
-            name = null,
-            nat = null,
-            phone = null,
-            picture = null,
-            registered = null
-        )
-        val data3 = UserResult(
-            cell = null,
-            dob = UserDob(age = null, date = "2023-05-20T09:42:29.000+09:00"),
-            email = "user3@example.com",
-            gender = null,
-            id = null,
-            location = null,
-            login = null,
-            name = null,
-            nat = null,
-            phone = null,
+            phone = "123-456-789",
             picture = null,
             registered = null
         )
 
-        val dataList = listOf(data1, data2, data3)
         val response = UserResponse(
             info = UserResponseInfo(
                 page = 1,
-                results = 3,
-                seed = "seed",
+                results = 1,
+                seed = "test",
                 version = "version"
             ),
-            results = dataList
+            results = listOf(userResult)
         )
 
         coEvery { userService.search(userRequest) } returns response
 
-        val result = repository.searchItem(userRequest)
+        // When
+        val result = repository.searchUsers(query, page)
 
-        // Debug: Print actual result
-        println("Actual result: ${result.users}")
-        println("First user: ${result.users.firstOrNull()}")
+        // Then
+        assertEquals(1, result.users.size)
+        assertEquals(1, result.totalCount)
+        assertEquals("user@example.com", result.users[0].htmlUrl)
+    }
 
-        // Verify the repository returns correct number of users
-        assertEquals(3, result.users.size)
+    @Test
+    fun `searchUsers handles network response correctly with multiple users`() = runTest {
+        // Given
+        val query = "developers"
+        val page = 1
+        val userRequest = UserRequest(seed = query, page = page)
 
-        // Test basic functionality without complex assertions
-        assertTrue(result.users.isNotEmpty())
-        assertTrue(result.users.size == 3)
+        val userResults = listOf(
+            UserResult(
+                cell = null,
+                dob = UserDob(age = 25, date = "2023-05-21T09:42:29.000+09:00"),
+                email = "user1@example.com",
+                gender = null,
+                id = null,
+                location = null,
+                login = null,
+                name = null,
+                nat = null,
+                phone = null,
+                picture = null,
+                registered = null
+            ),
+            UserResult(
+                cell = null,
+                dob = UserDob(age = 28, date = "2023-05-20T09:42:29.000+09:00"),
+                email = "user2@example.com",
+                gender = null,
+                id = null,
+                location = null,
+                login = null,
+                name = null,
+                nat = null,
+                phone = null,
+                picture = null,
+                registered = null
+            )
+        )
 
-        // Test that users can be sorted
-        val sortedUsers = result.users.sortedByDescending { it.timestamp }
-        assertTrue(sortedUsers.isNotEmpty())
-        assertEquals(3, sortedUsers.size)
+        val response = UserResponse(
+            info = UserResponseInfo(
+                page = 1,
+                results = 2,
+                seed = "developers",
+                version = "version"
+            ),
+            results = userResults
+        )
+
+        coEvery { userService.search(userRequest) } returns response
+
+        // When
+        val result = repository.searchUsers(query, page)
+
+        // Then
+        assertEquals(2, result.users.size)
+        assertEquals(2, result.totalCount)
+        assertEquals(false, result.incompleteResults)
+    }
+
+    @Test
+    fun `searchUsers with different page numbers`() = runTest {
+        // Given
+        val query = "test"
+        val page = 2
+        val userRequest = UserRequest(seed = query, page = page)
+        val response = UserResponse(
+            info = UserResponseInfo(
+                page = 2,
+                results = 0,
+                seed = "test",
+                version = "version"
+            ),
+            results = emptyList()
+        )
+        coEvery { userService.search(userRequest) } returns response
+
+        // When
+        val result = repository.searchUsers(query, page)
+
+        // Then
+        assertTrue(result.users.isEmpty())
+        assertEquals(0, result.totalCount)
     }
 }
