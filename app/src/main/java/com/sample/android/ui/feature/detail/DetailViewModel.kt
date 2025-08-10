@@ -2,7 +2,9 @@ package com.sample.android.ui.feature.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sample.android.repository.FavoriteRepository
+import com.sample.android.domain.usecase.AddToFavoritesUseCase
+import com.sample.android.domain.usecase.RemoveFromFavoritesUseCase
+import com.sample.android.mapper.toUser
 import com.sample.android.ui.feature.main.model.UserUiData
 import com.sample.android.ui.feature.main.model.like
 import com.sample.android.ui.feature.main.model.unlike
@@ -16,8 +18,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
 @HiltViewModel
-class DetailViewModel @Inject constructor(private val favoriteRepository: FavoriteRepository) :
-    ViewModel() {
+class DetailViewModel @Inject constructor(
+    private val addToFavoritesUseCase: AddToFavoritesUseCase,
+    private val removeFromFavoritesUseCase: RemoveFromFavoritesUseCase
+) : ViewModel() {
     private val _currentList = mutableListOf<UserUiData>()
     val currentList
         get() = _currentList.toList()
@@ -40,22 +44,27 @@ class DetailViewModel @Inject constructor(private val favoriteRepository: Favori
     }
 
     private val favoriteLock = AtomicBoolean(false)
+
     fun unlikeFavoriteData(userUiData: UserUiData) {
         viewModelScope.launch {
             if (favoriteLock.getAndSet(true)) {
                 return@launch
             }
-            favoriteRepository.remove(userUiData.data)
+            try {
+                val user = userUiData.data.toUser()
+                removeFromFavoritesUseCase(user)
 
-            val list = _currentList.unlike(userUiData)
-            _currentList.clear()
-            _currentList.addAll(list)
+                val list = _currentList.unlike(userUiData)
+                _currentList.clear()
+                _currentList.addAll(list)
 
-            val unlikedData = userUiData.copy(isFavorite = false)
-            _currentData.emit(unlikedData)
+                val unlikedData = userUiData.copy(isFavorite = false)
+                _currentData.emit(unlikedData)
 
-            _isChangedFavorite.emit(true)
-            favoriteLock.set(false)
+                _isChangedFavorite.emit(true)
+            } finally {
+                favoriteLock.set(false)
+            }
         }
     }
 
@@ -64,17 +73,21 @@ class DetailViewModel @Inject constructor(private val favoriteRepository: Favori
             if (favoriteLock.getAndSet(true)) {
                 return@launch
             }
-            favoriteRepository.add(userUiData.data)
+            try {
+                val user = userUiData.data.toUser()
+                addToFavoritesUseCase(user)
 
-            val list = _currentList.like(userUiData)
-            _currentList.clear()
-            _currentList.addAll(list)
+                val list = _currentList.like(userUiData)
+                _currentList.clear()
+                _currentList.addAll(list)
 
-            val likedData = userUiData.copy(isFavorite = true)
-            _currentData.emit(likedData)
+                val likedData = userUiData.copy(isFavorite = true)
+                _currentData.emit(likedData)
 
-            _isChangedFavorite.emit(true)
-            favoriteLock.set(false)
+                _isChangedFavorite.emit(true)
+            } finally {
+                favoriteLock.set(false)
+            }
         }
     }
 }

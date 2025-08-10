@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.sample.android.data"
+    namespace = "com.sample.android.domain"
     compileSdk = 35
 
     defaultConfig {
@@ -52,20 +52,11 @@ android {
 }
 
 dependencies {
-    // Domain layer
-    implementation(project(":domain"))
-    
-    // Network layer
-    implementation(project(":network"))
-
     implementation(libs.androidx.core.ktx)
 
     // Hilt DI (using annotationProcessor instead of kapt)
     implementation(libs.hilt.android)
     annotationProcessor(libs.hilt.compiler)
-
-    // JSON parsing
-    implementation(libs.gson)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
