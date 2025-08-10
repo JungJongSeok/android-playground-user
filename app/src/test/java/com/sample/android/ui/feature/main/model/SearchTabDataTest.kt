@@ -36,7 +36,6 @@ class SearchTabDataTest {
 
     @Test
     fun `like should change favorite status to true for matching SearchTabMetaData`() {
-        // Given
         val userUiData1 = UserUiData(isFavorite = false, data = testUserData1)
         val userUiData2 = UserUiData(isFavorite = false, data = testUserData2)
         val searchTabData1 = SearchTabUiData(userUiData1)
@@ -44,10 +43,8 @@ class SearchTabDataTest {
         val border = SearchTabBorder("1", false)
         val list = listOf<SearchTabData>(searchTabData1, searchTabData2, border)
 
-        // When
         val result = list.like(userUiData1)
 
-        // Then
         assertEquals(3, result.size)
 
         val updatedSearchTab1 = result[0] as SearchTabUiData
@@ -63,7 +60,6 @@ class SearchTabDataTest {
 
     @Test
     fun `unlike should change favorite status to false for matching SearchTabMetaData`() {
-        // Given
         val userUiData1 = UserUiData(isFavorite = true, data = testUserData1)
         val userUiData2 = UserUiData(isFavorite = true, data = testUserData2)
         val searchTabData1 = SearchTabUiData(userUiData1)
@@ -71,10 +67,8 @@ class SearchTabDataTest {
         val border = SearchTabBorder("1", false)
         val list = listOf<SearchTabData>(searchTabData1, searchTabData2, border)
 
-        // When
         val result = list.unlike(userUiData1)
 
-        // Then
         assertEquals(3, result.size)
 
         val updatedSearchTab1 = result[0] as SearchTabUiData
@@ -90,7 +84,6 @@ class SearchTabDataTest {
 
     @Test
     fun `like should not change non-matching SearchTabMetaData`() {
-        // Given
         val userUiData1 = UserUiData(isFavorite = false, data = testUserData1)
         val userUiData2 = UserUiData(isFavorite = false, data = testUserData2)
         val nonMatchingUserUiData =
@@ -99,10 +92,8 @@ class SearchTabDataTest {
         val searchTabData2 = SearchTabUiData(userUiData2)
         val list = listOf<SearchTabData>(searchTabData1, searchTabData2)
 
-        // When
         val result = list.like(nonMatchingUserUiData)
 
-        // Then
         assertEquals(2, result.size)
 
         val updatedSearchTab1 = result[0] as SearchTabUiData
@@ -114,7 +105,6 @@ class SearchTabDataTest {
 
     @Test
     fun `unlike should not change non-matching SearchTabMetaData`() {
-        // Given
         val userUiData1 = UserUiData(isFavorite = true, data = testUserData1)
         val userUiData2 = UserUiData(isFavorite = true, data = testUserData2)
         val nonMatchingUserUiData =
@@ -123,10 +113,8 @@ class SearchTabDataTest {
         val searchTabData2 = SearchTabUiData(userUiData2)
         val list = listOf<SearchTabData>(searchTabData1, searchTabData2)
 
-        // When
         val result = list.unlike(nonMatchingUserUiData)
 
-        // Then
         assertEquals(2, result.size)
 
         val updatedSearchTab1 = result[0] as SearchTabUiData
@@ -138,18 +126,15 @@ class SearchTabDataTest {
 
     @Test
     fun `operations should preserve SearchTabBorder items unchanged`() {
-        // Given
         val userUiData = UserUiData(isFavorite = false, data = testUserData1)
         val searchTabData = SearchTabUiData(userUiData)
         val border1 = SearchTabBorder("1", false)
         val border2 = SearchTabBorder("End", true)
         val list = listOf<SearchTabData>(searchTabData, border1, border2)
 
-        // When
         val likeResult = list.like(userUiData)
         val unlikeResult = list.unlike(userUiData)
 
-        // Then
         assertEquals(3, likeResult.size)
         assertEquals(3, unlikeResult.size)
 
@@ -166,28 +151,23 @@ class SearchTabDataTest {
 
     @Test
     fun `operations on empty list should return empty list`() {
-        // Given
         val emptyList = emptyList<SearchTabData>()
         val userUiData = UserUiData(isFavorite = false, data = testUserData1)
 
-        // When & Then
         assertEquals(0, emptyList.like(userUiData).size)
         assertEquals(0, emptyList.unlike(userUiData).size)
     }
 
     @Test
     fun `operations on list with only borders should return unchanged list`() {
-        // Given
         val border1 = SearchTabBorder("1", false)
         val border2 = SearchTabBorder("End", true)
         val list = listOf<SearchTabData>(border1, border2)
         val userUiData = UserUiData(isFavorite = false, data = testUserData1)
 
-        // When
         val likeResult = list.like(userUiData)
         val unlikeResult = list.unlike(userUiData)
 
-        // Then
         assertEquals(2, likeResult.size)
         assertEquals(2, unlikeResult.size)
         assertEquals(border1, likeResult[0])

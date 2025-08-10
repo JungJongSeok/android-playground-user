@@ -11,7 +11,6 @@ class MainTabTest {
         // Given & When
         val tab = MainTab.SEARCH
 
-        // Then
         assertEquals(0, tab.index)
         assertEquals(R.string.main_tab_search, tab.titleRes)
     }
@@ -21,7 +20,6 @@ class MainTabTest {
         // Given & When
         val tab = MainTab.FAVORITE
 
-        // Then
         assertEquals(1, tab.index)
         assertEquals(R.string.main_tab_favorite, tab.titleRes)
     }
@@ -31,7 +29,6 @@ class MainTabTest {
         // Given & When
         val values = MainTab.values()
 
-        // Then
         assertEquals(2, values.size)
     }
 
@@ -40,7 +37,6 @@ class MainTabTest {
         // Given & When
         val values = MainTab.values()
 
-        // Then
         assertEquals(MainTab.SEARCH, values[0])
         assertEquals(MainTab.FAVORITE, values[1])
     }
@@ -54,7 +50,6 @@ class MainTabTest {
 
     @Test
     fun `MainTab index should match array position`() {
-        // Given
         val values = MainTab.values()
 
         // When & Then

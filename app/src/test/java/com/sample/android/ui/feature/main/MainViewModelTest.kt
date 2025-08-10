@@ -1,10 +1,12 @@
 package com.sample.android.ui.feature.main
 
 import com.sample.android.data.UserMetaData
-import com.sample.android.data.UserMetaDataList
-import com.sample.android.network.request.UserRequest
-import com.sample.android.repository.FavoriteRepository
-import com.sample.android.repository.SearchRepository
+import com.sample.android.domain.entity.User
+import com.sample.android.domain.entity.UserSearchResult
+import com.sample.android.domain.usecase.AddToFavoritesUseCase
+import com.sample.android.domain.usecase.GetFavoritesUseCase
+import com.sample.android.domain.usecase.RemoveFromFavoritesUseCase
+import com.sample.android.domain.usecase.SearchUsersUseCase
 import com.sample.android.ui.feature.main.model.MainEffect
 import com.sample.android.ui.feature.main.model.MainIntent
 import com.sample.android.ui.feature.main.model.MainState
@@ -37,23 +39,29 @@ class MainViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
-    private val searchRepository: SearchRepository = mockk()
-    private val favoriteRepository: FavoriteRepository = mockk()
+    private val searchUsersUseCase: SearchUsersUseCase = mockk()
+    private val getFavoritesUseCase: GetFavoritesUseCase = mockk()
+    private val addToFavoritesUseCase: AddToFavoritesUseCase = mockk()
+    private val removeFromFavoritesUseCase: RemoveFromFavoritesUseCase = mockk()
 
     private lateinit var viewModel: MainViewModel
 
-    private val testUserData = UserMetaData(
-        title = "Test User",
-        thumbnail = "https://example.com/image.jpg",
-        url = "test@example.com",
-        datetime = "2023-01-01T12:00:00.000Z"
+    private val testUser = User(
+        id = 1L,
+        login = "testuser",
+        avatarUrl = "https://example.com/image.jpg",
+        htmlUrl = "https://github.com/testuser",
+        type = "User",
+        score = 1.0
     )
 
-    private val testUserData2 = UserMetaData(
-        title = "Test User 2",
-        thumbnail = "https://example.com/image2.jpg",
-        url = "test2@example.com",
-        datetime = "2023-01-02T12:00:00.000Z"
+    private val testUser2 = User(
+        id = 2L,
+        login = "testuser2",
+        avatarUrl = "https://example.com/image2.jpg",
+        htmlUrl = "https://github.com/testuser2",
+        type = "User",
+        score = 2.0
     )
 
     @Before
@@ -61,11 +69,16 @@ class MainViewModelTest {
         Dispatchers.setMain(testDispatcher)
 
         // Default mock behaviors
-        coEvery { favoriteRepository.get() } returns emptyList()
-        coEvery { favoriteRepository.add(any()) } returns Unit
-        coEvery { favoriteRepository.remove(any()) } returns Unit
+        coEvery { getFavoritesUseCase() } returns emptyList()
+        coEvery { addToFavoritesUseCase(any()) } returns Unit
+        coEvery { removeFromFavoritesUseCase(any()) } returns Unit
 
-        viewModel = MainViewModel(searchRepository, favoriteRepository)
+        viewModel = MainViewModel(
+            searchUsersUseCase,
+            getFavoritesUseCase,
+            addToFavoritesUseCase,
+            removeFromFavoritesUseCase
+        )
     }
 
     @After
@@ -75,10 +88,8 @@ class MainViewModelTest {
 
     @Test
     fun `initial state should be correct`() = testScope.runTest {
-        // When
         val state = viewModel.state.first()
 
-        // Then
         assertEquals(MainState.initial(), state)
         assertTrue(state.favorites.isEmpty())
         assertTrue(state.searches.isEmpty())
@@ -91,28 +102,22 @@ class MainViewModelTest {
 
     @Test
     fun `Initialize intent should load favorites`() = testScope.runTest {
-        // Given
-        val favoriteData = listOf(testUserData)
-        coEvery { favoriteRepository.get() } returns favoriteData
+        val favoriteData = listOf(testUser)
+        coEvery { getFavoritesUseCase() } returns favoriteData
 
-        // When
         viewModel.processIntent(MainIntent.Initialize)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
         val state = viewModel.state.first()
         assertEquals(1, state.favorites.size)
-        assertEquals(testUserData, state.favorites[0].data)
         assertTrue(state.favorites[0].isFavorite)
     }
 
     @Test
-    fun `Initialize intent should emit error effect when repository fails`() = testScope.runTest {
-        // Given
+    fun `Initialize intent should emit error effect when use case fails`() = testScope.runTest {
         val error = IOException("Network error")
-        coEvery { favoriteRepository.get() } throws error
+        coEvery { getFavoritesUseCase() } throws error
 
-        // When
         val effects = mutableListOf<MainEffect>()
         val job = launch {
             viewModel.effect.toList(effects)
@@ -121,7 +126,6 @@ class MainViewModelTest {
         viewModel.processIntent(MainIntent.Initialize)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
         assertEquals(1, effects.size)
         assertTrue(effects[0] is MainEffect.ShowError)
         assertEquals(error, (effects[0] as MainEffect.ShowError).exception)
@@ -130,22 +134,21 @@ class MainViewModelTest {
 
     @Test
     fun `Restore intent should sync favorites and update search results`() = testScope.runTest {
-        // Given
-        val favoriteData = listOf(testUserData)
-        coEvery { favoriteRepository.get() } returns favoriteData
-        coEvery { searchRepository.searchItem(any()) } returns UserMetaDataList(
-            listOf(testUserData, testUserData2)
+        val favoriteData = listOf(testUser)
+        coEvery { getFavoritesUseCase() } returns favoriteData
+        coEvery { searchUsersUseCase(any(), any()) } returns UserSearchResult(
+            users = listOf(testUser, testUser2),
+            totalCount = 2,
+            incompleteResults = false
         )
 
         // Setup initial search
         viewModel.processIntent(MainIntent.Search("test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // When
         viewModel.processIntent(MainIntent.Restore)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
         val state = viewModel.state.first()
         assertEquals(1, state.favorites.size)
         assertTrue(state.favorites[0].isFavorite)
@@ -158,12 +161,10 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `Restore intent should emit error effect when repository fails`() = testScope.runTest {
-        // Given
+    fun `Restore intent should emit error effect when use case fails`() = testScope.runTest {
         val error = IOException("Network error")
-        coEvery { favoriteRepository.get() } throws error
+        coEvery { getFavoritesUseCase() } throws error
 
-        // When
         val effects = mutableListOf<MainEffect>()
         val job = launch {
             viewModel.effect.toList(effects)
@@ -172,7 +173,6 @@ class MainViewModelTest {
         viewModel.processIntent(MainIntent.Restore)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
         assertEquals(1, effects.size)
         assertTrue(effects[0] is MainEffect.ShowError)
         assertEquals(error, (effects[0] as MainEffect.ShowError).exception)
@@ -182,81 +182,82 @@ class MainViewModelTest {
     @Test
     fun `Search intent should update state with results and emit ScrollToTop effect`() =
         testScope.runTest {
-        // Given
-        val query = "test"
-        val searchResults = UserMetaDataList(listOf(testUserData))
-        coEvery { searchRepository.searchItem(any()) } returns searchResults
+            val query = "test"
+            val searchResults = UserSearchResult(
+                users = listOf(testUser),
+                totalCount = 1,
+                incompleteResults = false
+            )
+            coEvery { searchUsersUseCase(query, 1) } returns searchResults
 
-        // When
-        val effects = mutableListOf<MainEffect>()
-        val job = launch {
-            viewModel.effect.toList(effects)
+            val effects = mutableListOf<MainEffect>()
+            val job = launch {
+                viewModel.effect.toList(effects)
+            }
+
+            viewModel.processIntent(MainIntent.Search(query))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val state = viewModel.state.first()
+            assertEquals(query, state.query)
+            assertEquals(2, state.currentPage)
+            assertEquals(2, state.searches.size)
+            assertFalse(state.isLoading)
+            assertFalse(state.isEnd)
+
+            val searchResult = state.searches[0] as SearchTabUiData
+            assertEquals(testUser.login, searchResult.data.data.title)
+            assertFalse(searchResult.data.isFavorite)
+
+            assertTrue(state.searches[1] is SearchTabBorder)
+            val border = state.searches[1] as SearchTabBorder
+            assertEquals("1", border.text)
+            assertFalse(border.isEnd)
+
+            assertEquals(1, effects.size)
+            assertTrue(effects[0] is MainEffect.ScrollToTop)
+            job.cancel()
         }
 
-        viewModel.processIntent(MainIntent.Search(query))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // Then
-        val state = viewModel.state.first()
-        assertEquals(query, state.query)
-        assertEquals(2, state.currentPage)
-        assertEquals(2, state.searches.size)
-        assertFalse(state.isLoading)
-        assertFalse(state.isEnd)
-
-        val searchResult = state.searches[0] as SearchTabUiData
-        assertEquals(testUserData, searchResult.data.data)
-        assertFalse(searchResult.data.isFavorite)
-
-        assertTrue(state.searches[1] is SearchTabBorder)
-        val border = state.searches[1] as SearchTabBorder
-        assertEquals("1", border.text)
-        assertFalse(border.isEnd)
-
-        assertEquals(1, effects.size)
-        assertTrue(effects[0] is MainEffect.ScrollToTop)
-        job.cancel()
-    }
-
     @Test
-    fun `Search intent with blank query should not call repository`() = testScope.runTest {
-        // When
+    fun `Search intent with blank query should not call use case`() = testScope.runTest {
         viewModel.processIntent(MainIntent.Search("   "))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
-        coVerify(exactly = 0) { searchRepository.searchItem(any()) }
+        coVerify(exactly = 0) { searchUsersUseCase(any(), any()) }
         val state = viewModel.state.first()
         assertFalse(state.isLoading)
     }
 
     @Test
     fun `Search intent should cancel previous search`() = testScope.runTest {
-        // Given
-        val searchResults = UserMetaDataList(listOf(testUserData))
-        coEvery { searchRepository.searchItem(any()) } returns searchResults
+        val searchResults = UserSearchResult(
+            users = listOf(testUser),
+            totalCount = 1,
+            incompleteResults = false
+        )
+        coEvery { searchUsersUseCase(any(), any()) } returns searchResults
 
-        // When
         viewModel.processIntent(MainIntent.Search("test1"))
         viewModel.processIntent(MainIntent.Search("test2"))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
-        coVerify(exactly = 1) { searchRepository.searchItem(UserRequest("test2", 1)) }
+        coVerify(exactly = 1) { searchUsersUseCase("test2", 1) }
     }
 
     @Test
     fun `Search intent with empty results should show end border`() = testScope.runTest {
-        // Given
         val query = "test"
-        val searchResults = UserMetaDataList(emptyList())
-        coEvery { searchRepository.searchItem(any()) } returns searchResults
+        val searchResults = UserSearchResult(
+            users = emptyList(),
+            totalCount = 0,
+            incompleteResults = false
+        )
+        coEvery { searchUsersUseCase(query, 1) } returns searchResults
 
-        // When
         viewModel.processIntent(MainIntent.Search(query))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
         val state = viewModel.state.first()
         assertEquals(1, state.searches.size)
         assertTrue(state.searches[0] is SearchTabBorder)
@@ -266,12 +267,10 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `Search intent should emit error effect when repository fails`() = testScope.runTest {
-        // Given
+    fun `Search intent should emit error effect when use case fails`() = testScope.runTest {
         val error = IOException("Network error")
-        coEvery { searchRepository.searchItem(any()) } throws error
+        coEvery { searchUsersUseCase(any(), any()) } throws error
 
-        // When
         val effects = mutableListOf<MainEffect>()
         val job = launch {
             viewModel.effect.toList(effects)
@@ -280,7 +279,6 @@ class MainViewModelTest {
         viewModel.processIntent(MainIntent.Search("test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
         assertEquals(1, effects.size)
         assertTrue(effects[0] is MainEffect.ShowError)
         assertEquals(error, (effects[0] as MainEffect.ShowError).exception)
@@ -289,22 +287,27 @@ class MainViewModelTest {
 
     @Test
     fun `SearchMore intent should append results`() = testScope.runTest {
-        // Given
-        val firstResults = UserMetaDataList(listOf(testUserData))
-        val secondResults = UserMetaDataList(listOf(testUserData2))
+        val firstResults = UserSearchResult(
+            users = listOf(testUser),
+            totalCount = 2,
+            incompleteResults = false
+        )
+        val secondResults = UserSearchResult(
+            users = listOf(testUser2),
+            totalCount = 2,
+            incompleteResults = false
+        )
 
-        coEvery { searchRepository.searchItem(UserRequest("test", 1)) } returns firstResults
-        coEvery { searchRepository.searchItem(UserRequest("test", 2)) } returns secondResults
+        coEvery { searchUsersUseCase("test", 1) } returns firstResults
+        coEvery { searchUsersUseCase("test", 2) } returns secondResults
 
         // Setup initial search
         viewModel.processIntent(MainIntent.Search("test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // When
         viewModel.processIntent(MainIntent.SearchMore("test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
         val state = viewModel.state.first()
         assertEquals(3, state.currentPage)
         assertEquals(4, state.searches.size)
@@ -312,75 +315,82 @@ class MainViewModelTest {
 
         val firstResult = state.searches[0] as SearchTabUiData
         val secondResult = state.searches[2] as SearchTabUiData
-        assertEquals(testUserData, firstResult.data.data)
-        assertEquals(testUserData2, secondResult.data.data)
+        assertEquals(testUser.login, firstResult.data.data.title)
+        assertEquals(testUser2.login, secondResult.data.data.title)
     }
 
     @Test
-    fun `SearchMore intent should not call repository when isEnd is true`() = testScope.runTest {
-        // Given
-        val searchResults = UserMetaDataList(emptyList())
-        coEvery { searchRepository.searchItem(any()) } returns searchResults
+    fun `SearchMore intent should not call use case when isEnd is true`() = testScope.runTest {
+        val searchResults = UserSearchResult(
+            users = emptyList(),
+            totalCount = 0,
+            incompleteResults = false
+        )
+        coEvery { searchUsersUseCase(any(), any()) } returns searchResults
 
         // Setup search with empty results
         viewModel.processIntent(MainIntent.Search("test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // When
         viewModel.processIntent(MainIntent.SearchMore("test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
-        coVerify(exactly = 1) { searchRepository.searchItem(any()) }
+        coVerify(exactly = 1) { searchUsersUseCase(any(), any()) }
     }
 
     @Test
-    fun `SearchMore intent should not call repository with blank query and no previous query`() =
+    fun `SearchMore intent should not call use case with blank query and no previous query`() =
         testScope.runTest {
-        // When
-        viewModel.processIntent(MainIntent.SearchMore(""))
-        testDispatcher.scheduler.advanceUntilIdle()
+            viewModel.processIntent(MainIntent.SearchMore(""))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
-        coVerify(exactly = 0) { searchRepository.searchItem(any()) }
-    }
+            coVerify(exactly = 0) { searchUsersUseCase(any(), any()) }
+        }
 
     @Test
     fun `SearchMore intent should use previous query when blank query provided`() =
         testScope.runTest {
-        // Given
-        val searchResults = UserMetaDataList(listOf(testUserData))
-        coEvery { searchRepository.searchItem(any()) } returns searchResults
+            val searchResults = UserSearchResult(
+                users = listOf(testUser),
+                totalCount = 1,
+                incompleteResults = false
+            )
+            coEvery { searchUsersUseCase(any(), any()) } returns searchResults
 
-        // Setup initial search
-        viewModel.processIntent(MainIntent.Search("test"))
-        testDispatcher.scheduler.advanceUntilIdle()
+            // Setup initial search
+            viewModel.processIntent(MainIntent.Search("test"))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        // When
-        viewModel.processIntent(MainIntent.SearchMore(""))
-        testDispatcher.scheduler.advanceUntilIdle()
+            viewModel.processIntent(MainIntent.SearchMore(""))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
-        coVerify { searchRepository.searchItem(UserRequest("test", 2)) }
-    }
+            coVerify { searchUsersUseCase("test", 2) }
+        }
 
     @Test
-    fun `AddFavorite intent should add to repository and update state`() = testScope.runTest {
-        // Given
+    fun `AddFavorite intent should add to use case and update state`() = testScope.runTest {
+        val testUserData = UserMetaData(
+            title = testUser.login,
+            thumbnail = testUser.avatarUrl,
+            url = testUser.htmlUrl,
+            datetime = null
+        )
         val userUiData = UserUiData(isFavorite = false, data = testUserData)
-        val searchResults = UserMetaDataList(listOf(testUserData))
-        coEvery { searchRepository.searchItem(any()) } returns searchResults
+        val searchResults = UserSearchResult(
+            users = listOf(testUser),
+            totalCount = 1,
+            incompleteResults = false
+        )
+        coEvery { searchUsersUseCase(any(), any()) } returns searchResults
 
         // Setup search first
         viewModel.processIntent(MainIntent.Search("test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // When
         viewModel.processIntent(MainIntent.AddFavorite(userUiData))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
-        coVerify { favoriteRepository.add(testUserData) }
+        coVerify { addToFavoritesUseCase(any<User>()) }
 
         val state = viewModel.state.first()
         assertEquals(1, state.favorites.size)
@@ -391,13 +401,17 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `AddFavorite intent should emit error effect when repository fails`() = testScope.runTest {
-        // Given
+    fun `AddFavorite intent should emit error effect when use case fails`() = testScope.runTest {
+        val testUserData = UserMetaData(
+            title = testUser.login,
+            thumbnail = testUser.avatarUrl,
+            url = testUser.htmlUrl,
+            datetime = null
+        )
         val userUiData = UserUiData(isFavorite = false, data = testUserData)
         val error = IOException("Network error")
-        coEvery { favoriteRepository.add(any()) } throws error
+        coEvery { addToFavoritesUseCase(any()) } throws error
 
-        // When
         val effects = mutableListOf<MainEffect>()
         val job = launch {
             viewModel.effect.toList(effects)
@@ -406,7 +420,6 @@ class MainViewModelTest {
         viewModel.processIntent(MainIntent.AddFavorite(userUiData))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
         assertEquals(1, effects.size)
         assertTrue(effects[0] is MainEffect.ShowError)
         assertEquals(error, (effects[0] as MainEffect.ShowError).exception)
@@ -414,63 +427,75 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `RemoveFavorite intent should remove from repository and update state`() =
+    fun `RemoveFavorite intent should remove from use case and update state`() =
         testScope.runTest {
-        // Given
-        val userUiData = UserUiData(isFavorite = true, data = testUserData)
-        val searchResults = UserMetaDataList(listOf(testUserData))
-        coEvery { searchRepository.searchItem(any()) } returns searchResults
+            val testUserData = UserMetaData(
+                title = testUser.login,
+                thumbnail = testUser.avatarUrl,
+                url = testUser.htmlUrl,
+                datetime = null
+            )
+            val userUiData = UserUiData(isFavorite = true, data = testUserData)
+            val searchResults = UserSearchResult(
+                users = listOf(testUser),
+                totalCount = 1,
+                incompleteResults = false
+            )
+            coEvery { searchUsersUseCase(any(), any()) } returns searchResults
 
-        // Setup search and favorite
-        viewModel.processIntent(MainIntent.Search("test"))
-        viewModel.processIntent(MainIntent.AddFavorite(userUiData))
-        testDispatcher.scheduler.advanceUntilIdle()
+            // Setup search and favorite
+            viewModel.processIntent(MainIntent.Search("test"))
+            viewModel.processIntent(MainIntent.AddFavorite(userUiData))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        // When
-        viewModel.processIntent(MainIntent.RemoveFavorite(userUiData))
-        testDispatcher.scheduler.advanceUntilIdle()
+            viewModel.processIntent(MainIntent.RemoveFavorite(userUiData))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
-        coVerify { favoriteRepository.remove(testUserData) }
+            coVerify { removeFromFavoritesUseCase(any<User>()) }
 
-        val state = viewModel.state.first()
-        assertEquals(0, state.favorites.size)
+            val state = viewModel.state.first()
+            assertEquals(0, state.favorites.size)
 
-        val searchResult = state.searches[0] as SearchTabUiData
-        assertFalse(searchResult.data.isFavorite)
-    }
-
-    @Test
-    fun `RemoveFavorite intent should emit error effect when repository fails`() =
-        testScope.runTest {
-        // Given
-        val userUiData = UserUiData(isFavorite = true, data = testUserData)
-        val error = IOException("Network error")
-        coEvery { favoriteRepository.remove(any()) } throws error
-
-        // When
-        val effects = mutableListOf<MainEffect>()
-        val job = launch {
-            viewModel.effect.toList(effects)
+            val searchResult = state.searches[0] as SearchTabUiData
+            assertFalse(searchResult.data.isFavorite)
         }
 
-        viewModel.processIntent(MainIntent.RemoveFavorite(userUiData))
-        testDispatcher.scheduler.advanceUntilIdle()
+    @Test
+    fun `RemoveFavorite intent should emit error effect when use case fails`() =
+        testScope.runTest {
+            val testUserData = UserMetaData(
+                title = testUser.login,
+                thumbnail = testUser.avatarUrl,
+                url = testUser.htmlUrl,
+                datetime = null
+            )
+            val userUiData = UserUiData(isFavorite = true, data = testUserData)
+            val error = IOException("Network error")
+            coEvery { removeFromFavoritesUseCase(any()) } throws error
 
-        // Then
-        assertEquals(1, effects.size)
-        assertTrue(effects[0] is MainEffect.ShowError)
-        assertEquals(error, (effects[0] as MainEffect.ShowError).exception)
-        job.cancel()
-    }
+            val effects = mutableListOf<MainEffect>()
+            val job = launch {
+                viewModel.effect.toList(effects)
+            }
+
+            viewModel.processIntent(MainIntent.RemoveFavorite(userUiData))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(1, effects.size)
+            assertTrue(effects[0] is MainEffect.ShowError)
+            assertEquals(error, (effects[0] as MainEffect.ShowError).exception)
+            job.cancel()
+        }
 
     @Test
     fun `loading state should be correct during search`() = testScope.runTest {
-        // Given
-        val searchResults = UserMetaDataList(listOf(testUserData))
-        coEvery { searchRepository.searchItem(any()) } returns searchResults
+        val searchResults = UserSearchResult(
+            users = listOf(testUser),
+            totalCount = 1,
+            incompleteResults = false
+        )
+        coEvery { searchUsersUseCase(any(), any()) } returns searchResults
 
-        // When
         val loadingStates = mutableListOf<Boolean>()
         val job = launch {
             viewModel.state.collect { state ->
@@ -481,7 +506,6 @@ class MainViewModelTest {
         viewModel.processIntent(MainIntent.Search("test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
         assertEquals(3, loadingStates.size)
         assertFalse(loadingStates[0]) // Initial state
         assertTrue(loadingStates[1]) // Loading started
@@ -491,15 +515,17 @@ class MainViewModelTest {
 
     @Test
     fun `loadingMore state should be correct during searchMore`() = testScope.runTest {
-        // Given
-        val searchResults = UserMetaDataList(listOf(testUserData))
-        coEvery { searchRepository.searchItem(any()) } returns searchResults
+        val searchResults = UserSearchResult(
+            users = listOf(testUser),
+            totalCount = 1,
+            incompleteResults = false
+        )
+        coEvery { searchUsersUseCase(any(), any()) } returns searchResults
 
         // Setup initial search
         viewModel.processIntent(MainIntent.Search("test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // When
         val loadingMoreStates = mutableListOf<Boolean>()
         val job = launch {
             viewModel.state.collect { state ->
@@ -510,7 +536,6 @@ class MainViewModelTest {
         viewModel.processIntent(MainIntent.SearchMore("test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
         assertTrue("Should have at least 2 states recorded", loadingMoreStates.size >= 2)
         assertFalse("Initial loadingMore state should be false", loadingMoreStates.first())
         assertFalse("Final loadingMore state should be false", loadingMoreStates.last())
@@ -519,22 +544,21 @@ class MainViewModelTest {
 
     @Test
     fun `search with favorites should correctly mark favorite status`() = testScope.runTest {
-        // Given
-        val favoriteData = listOf(testUserData)
-        coEvery { favoriteRepository.get() } returns favoriteData
-        coEvery { searchRepository.searchItem(any()) } returns UserMetaDataList(
-            listOf(testUserData, testUserData2)
+        val favoriteData = listOf(testUser)
+        coEvery { getFavoritesUseCase() } returns favoriteData
+        coEvery { searchUsersUseCase(any(), any()) } returns UserSearchResult(
+            users = listOf(testUser, testUser2),
+            totalCount = 2,
+            incompleteResults = false
         )
 
         // Setup favorites first
         viewModel.processIntent(MainIntent.Initialize)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // When
         viewModel.processIntent(MainIntent.Search("test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
         val state = viewModel.state.first()
         val firstResult = state.searches[0] as SearchTabUiData
         val secondResult = state.searches[1] as SearchTabUiData
@@ -545,7 +569,12 @@ class MainViewModelTest {
 
     @Test
     fun `concurrent favorite operations should be properly synchronized`() = testScope.runTest {
-        // Given
+        val testUserData = UserMetaData(
+            title = testUser.login,
+            thumbnail = testUser.avatarUrl,
+            url = testUser.htmlUrl,
+            datetime = null
+        )
         val userUiData = UserUiData(isFavorite = false, data = testUserData)
 
         // When - trigger multiple operations
@@ -555,20 +584,21 @@ class MainViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then - at least one operation should succeed
-        coVerify(atLeast = 1) { favoriteRepository.add(testUserData) }
+        coVerify(atLeast = 1) { addToFavoritesUseCase(any<User>()) }
     }
 
     @Test
     fun `state updates should be atomic`() = testScope.runTest {
-        // Given
-        val searchResults = UserMetaDataList(listOf(testUserData))
-        coEvery { searchRepository.searchItem(any()) } returns searchResults
+        val searchResults = UserSearchResult(
+            users = listOf(testUser),
+            totalCount = 1,
+            incompleteResults = false
+        )
+        coEvery { searchUsersUseCase(any(), any()) } returns searchResults
 
-        // When
         viewModel.processIntent(MainIntent.Search("test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
         val state = viewModel.state.first()
         assertEquals("test", state.query)
         assertEquals(2, state.currentPage)

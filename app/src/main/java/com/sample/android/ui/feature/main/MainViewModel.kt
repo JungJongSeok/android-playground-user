@@ -2,9 +2,12 @@ package com.sample.android.ui.feature.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sample.android.network.request.UserRequest
-import com.sample.android.repository.FavoriteRepository
-import com.sample.android.repository.SearchRepository
+import com.sample.android.domain.usecase.AddToFavoritesUseCase
+import com.sample.android.domain.usecase.GetFavoritesUseCase
+import com.sample.android.domain.usecase.RemoveFromFavoritesUseCase
+import com.sample.android.domain.usecase.SearchUsersUseCase
+import com.sample.android.mapper.toUser
+import com.sample.android.mapper.toUserMetaData
 import com.sample.android.ui.feature.main.model.MainEffect
 import com.sample.android.ui.feature.main.model.MainIntent
 import com.sample.android.ui.feature.main.model.MainState
@@ -24,47 +27,31 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.shareIn
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
-/**
- * MVI ViewModel for Main screen
- * Processes Intents, emits States and Effects
- */
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val searchRepository: SearchRepository,
-    private val favoriteRepository: FavoriteRepository
+    private val searchUsersUseCase: SearchUsersUseCase,
+    private val getFavoritesUseCase: GetFavoritesUseCase,
+    private val addToFavoritesUseCase: AddToFavoritesUseCase,
+    private val removeFromFavoritesUseCase: RemoveFromFavoritesUseCase
 ) : ViewModel() {
 
-    // State
     private val _state = MutableStateFlow(MainState.initial())
     val state = _state.asStateFlow()
 
-    // Effect
     private val _effect = MutableSharedFlow<MainEffect>()
     val effect = _effect.asSharedFlow()
 
-    // Search job for cancellation
     private var searchJob: Job? = null
     private val searchLock = AtomicBoolean(false)
     private val favoriteLock = AtomicBoolean(false)
 
-    /**
-     * Process user intents
-     */
     fun processIntent(intent: MainIntent) {
         when (intent) {
             is MainIntent.Initialize -> handleInitialize()
@@ -79,8 +66,9 @@ class MainViewModel @Inject constructor(
     private fun handleInitialize() {
         viewModelScope.launch {
             try {
-                val data = favoriteRepository.get().map { data ->
-                    UserUiData(true, data)
+                val favorites = getFavoritesUseCase()
+                val data = favorites.map { user ->
+                    UserUiData(true, user.toUserMetaData())
                 }
                 updateState { it.copy(favorites = data) }
             } catch (e: Exception) {
@@ -92,8 +80,9 @@ class MainViewModel @Inject constructor(
     private fun handleRestore() {
         viewModelScope.launch {
             try {
-                val favoriteList = favoriteRepository.get().map { data ->
-                    UserUiData(true, data)
+                val favorites = getFavoritesUseCase()
+                val favoriteList = favorites.map { user ->
+                    UserUiData(true, user.toUserMetaData())
                 }
                 val favoriteSet = favoriteList.map { it.data }.toSet()
                 val searchList = state.value.searches.map { search ->
@@ -162,18 +151,24 @@ class MainViewModel @Inject constructor(
                     return@withContext
                 }
 
-                val response = searchRepository.searchItem(UserRequest(query, currentPosition))
+                val searchResult = searchUsersUseCase(query, currentPosition)
                 val nextPage = currentPosition + 1
-                val isEnd = response.users.isEmpty()
-                val favoriteSet = state.value.favorites.map { it.data }.toSet()
+                val isEnd = searchResult.users.isEmpty()
+                val favorites = getFavoritesUseCase()
+                val favoriteSet = favorites.toSet()
 
-                val list = response.users.map { data ->
-                    UserUiData(favoriteSet.contains(data), data)
-                }.map { SearchTabUiData(it) } + if (response.users.isEmpty()) {
+                val searchItems = searchResult.users.map { user ->
+                    val metaData = user.toUserMetaData()
+                    UserUiData(favoriteSet.contains(user), metaData)
+                }.map { SearchTabUiData(it) }
+
+                val borderItem = if (searchResult.users.isEmpty()) {
                     SearchTabBorder("", true)
                 } else {
                     SearchTabBorder(currentPosition.toString(), false)
                 }
+
+                val list: List<SearchTabData> = searchItems + listOf(borderItem)
 
                 updateState { currentState ->
                     if (currentPosition <= 1) {
@@ -210,7 +205,8 @@ class MainViewModel @Inject constructor(
                 return@launch
             }
             try {
-                favoriteRepository.add(userUiData.data)
+                val user = userUiData.data.toUser()
+                addToFavoritesUseCase(user)
 
                 val searchList = state.value.searches.like(userUiData)
                 val favoriteList = state.value.favorites.addUiData(
@@ -237,7 +233,8 @@ class MainViewModel @Inject constructor(
                 return@launch
             }
             try {
-                favoriteRepository.remove(userUiData.data)
+                val user = userUiData.data.toUser()
+                removeFromFavoritesUseCase(user)
 
                 val searchList = state.value.searches.unlike(userUiData)
                 val favoriteList = state.value.favorites.removeUiData(userUiData)

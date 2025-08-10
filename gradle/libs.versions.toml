@@ -4,6 +4,7 @@ kotlin = "2.0.0"
 coreKtx = "1.16.0"
 junit = "4.13.2"
 mockk = "1.13.5"
+kotlinCoroutines = "1.7.3"
 kotlinCoroutinesTest = "1.7.3"
 robolectric = "4.13"
 lifecycleRuntimeKtx = "2.8.7"
@@ -29,6 +30,7 @@ hiltNavigationCompose = "1.2.0"
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinCoroutines" }
 kotlin-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinCoroutinesTest" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }

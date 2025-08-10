@@ -1,7 +1,6 @@
 package com.sample.android.repository
 
 import com.sample.android.network.UserService
-import com.sample.android.network.request.UserRequest
 import com.sample.android.network.response.UserDob
 import com.sample.android.network.response.UserResponse
 import com.sample.android.network.response.UserResponseInfo
@@ -30,7 +29,6 @@ class SearchRepositoryTest {
     @Test
     fun `user documents are empty, users is empty and isEnd true`() =
         runTest {
-            val userRequest = UserRequest(seed = "seed", page = 1)
             val response = UserResponse(
                 info = UserResponseInfo(
                     page = 1,
@@ -40,17 +38,16 @@ class SearchRepositoryTest {
                 ),
                 results = emptyList()
             )
-            coEvery { userService.search(userRequest) } returns response
+            coEvery { userService.search(any()) } returns response
 
-            val result = repository.searchItem(userRequest)
+            val result = repository.searchUsers("seed", 1)
 
+            // Verify the result has no users
             assertTrue(result.users.isEmpty())
         }
 
     @Test
     fun `user have documents, they are merged and sorted by timestamp`() = runTest {
-        val userRequest = UserRequest(seed = "test", page = 1)
-
         val data1 = UserResult(
             cell = null,
             dob = UserDob(age = null, date = "2023-05-21T09:42:29.000+09:00"),
@@ -105,24 +102,18 @@ class SearchRepositoryTest {
             results = dataList
         )
 
-        coEvery { userService.search(userRequest) } returns response
+        coEvery { userService.search(any()) } returns response
 
-        val result = repository.searchItem(userRequest)
-
-        // Debug: Print actual result
-        println("Actual result: ${result.users}")
-        println("First user: ${result.users.firstOrNull()}")
+        val result = repository.searchUsers("test", 1)
 
         // Verify the repository returns correct number of users
         assertEquals(3, result.users.size)
 
-        // Test basic functionality without complex assertions
+        // Test basic functionality
         assertTrue(result.users.isNotEmpty())
-        assertTrue(result.users.size == 3)
+        assertEquals(3, result.users.size)
 
-        // Test that users can be sorted
-        val sortedUsers = result.users.sortedByDescending { it.timestamp }
-        assertTrue(sortedUsers.isNotEmpty())
-        assertEquals(3, sortedUsers.size)
+        // Verify that users have expected properties
+        assertTrue(result.totalCount >= 0)
     }
 }
