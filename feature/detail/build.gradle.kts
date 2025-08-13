@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.jacoco)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
 }
@@ -40,6 +41,17 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.isReturnDefaultValues = true
+        unitTests.all {
+            it.extensions.configure<JacocoTaskExtension> {
+                isIncludeNoLocationClasses = true
+                excludes = listOf("jdk.internal.*")
+            }
+            it.ignoreFailures = true
+        }
+    }
 }
 
 dependencies {
@@ -61,11 +73,14 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
-    implementation(project(":core"))
+    implementation(project(":feature:core"))
     implementation(project(":domain"))
     implementation(project(":data"))
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlin.coroutines.test)
+    testImplementation(libs.okhttp3.mockwebserver)
+    testImplementation(libs.robolectric)
+    testImplementation(project(":data"))
 }
