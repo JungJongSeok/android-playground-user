@@ -7,7 +7,7 @@ import com.sample.android.domain.usecase.RemoveFromFavoritesUseCase
 import com.sample.android.ui.feature.detail.model.DetailEffect
 import com.sample.android.ui.feature.detail.model.DetailIntent
 import com.sample.android.ui.feature.detail.model.DetailState
-import com.sample.android.ui.feature.main.model.UserUiData
+import com.sample.android.ui.model.UserUiData
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

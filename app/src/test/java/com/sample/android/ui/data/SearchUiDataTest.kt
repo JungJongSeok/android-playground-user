@@ -1,7 +1,7 @@
 package com.sample.android.ui.data
 
 import com.sample.android.data.UserMetaData
-import com.sample.android.ui.feature.main.model.UserUiData
+import com.sample.android.ui.model.UserUiData
 import com.sample.android.ui.feature.main.model.addUiData
 import com.sample.android.ui.feature.main.model.like
 import com.sample.android.ui.feature.main.model.removeUiData

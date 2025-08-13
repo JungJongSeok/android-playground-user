@@ -1,6 +1,7 @@
 [versions]
 agp = "8.7.3"
 kotlin = "2.0.0"
+ksp = "2.0.0-1.0.21"
 coreKtx = "1.16.0"
 junit = "4.13.2"
 mockk = "1.13.5"
@@ -68,8 +69,8 @@ hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-com
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-kotlin-kapt = { id = "org.jetbrains.kotlin.kapt" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 jacoco = { id = "jacoco" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }

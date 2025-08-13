@@ -12,7 +12,7 @@ import com.sample.android.ui.feature.main.model.MainIntent
 import com.sample.android.ui.feature.main.model.MainState
 import com.sample.android.ui.feature.main.model.SearchTabBorder
 import com.sample.android.ui.feature.main.model.SearchTabUiData
-import com.sample.android.ui.feature.main.model.UserUiData
+import com.sample.android.ui.model.UserUiData
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

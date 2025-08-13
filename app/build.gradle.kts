@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.jacoco)
     alias(libs.plugins.hilt)
-    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -60,7 +60,8 @@ android {
     }
 }
 
-private val modules = listOf("app", "network", "data", "domain")
+private val modules =
+    listOf("app", "network", "data", "domain", "core", "feature/main", "feature/detail")
 tasks.register("jacocoTestReport") {
     group = "verification"
     description = "Runs all unit tests to generate .exec files"
@@ -155,7 +156,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
 
     implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
     debugImplementation(libs.androidx.ui.tooling)
@@ -164,6 +165,8 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":data"))
     implementation(project(":network"))
+    implementation(project(":feature:main"))
+    implementation(project(":feature:detail"))
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

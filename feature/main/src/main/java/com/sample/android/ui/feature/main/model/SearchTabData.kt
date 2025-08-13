@@ -1,0 +1,35 @@
+package com.sample.android.ui.feature.main.model
+
+import androidx.annotation.Keep
+import com.sample.android.ui.model.UserUiData
+
+@Keep
+data class SearchTabUiData(
+    val data: UserUiData
+) : SearchTabData
+
+@Keep
+data class SearchTabBorder(
+    val text: String,
+    val isEnd: Boolean
+) : SearchTabData
+
+sealed interface SearchTabData
+
+fun List<SearchTabData>.like(userUiData: UserUiData): List<SearchTabData> {
+    return changeFavoriteStatus(userUiData, true)
+}
+
+fun List<SearchTabData>.unlike(userUiData: UserUiData): List<SearchTabData> {
+    return changeFavoriteStatus(userUiData, false)
+}
+
+private fun List<SearchTabData>.changeFavoriteStatus(userUiData: UserUiData, isFavorite: Boolean): List<SearchTabData> {
+    return this.map { search ->
+        if (search is SearchTabUiData && search.data == userUiData) {
+            search.copy(data = search.data.copy(isFavorite = isFavorite))
+        } else {
+            search
+        }
+    }
+}
