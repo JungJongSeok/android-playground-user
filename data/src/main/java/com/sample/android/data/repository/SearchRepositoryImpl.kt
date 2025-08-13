@@ -1,8 +1,8 @@
-package com.sample.android.repository
+package com.sample.android.data.repository
 
 import com.sample.android.domain.entity.UserSearchResult
 import com.sample.android.domain.repository.SearchRepository
-import com.sample.android.mapper.toUserSearchResult
+import com.sample.android.data.mapper.toUserSearchResult
 import com.sample.android.network.UserService
 import com.sample.android.network.request.UserRequest
 import kotlinx.coroutines.Dispatchers

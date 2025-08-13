@@ -2,8 +2,8 @@ package com.sample.android.di
 
 import com.sample.android.domain.repository.FavoriteRepository
 import com.sample.android.domain.repository.SearchRepository
-import com.sample.android.repository.FavoriteRepositoryImpl
-import com.sample.android.repository.SearchRepositoryImpl
+import com.sample.android.data.repository.FavoriteRepositoryImpl
+import com.sample.android.data.repository.SearchRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

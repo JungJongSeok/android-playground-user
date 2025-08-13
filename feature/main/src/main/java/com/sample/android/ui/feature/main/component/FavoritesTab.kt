@@ -11,7 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.sample.android.data.UserMetaData
+import com.sample.android.data.model.UserMetaData
+import com.sample.android.ui.mapper.toUiData
 import com.sample.android.ui.model.UserUiData
 import com.sample.android.ui.theme.CommonTheme
 
@@ -51,33 +52,26 @@ fun FavoritesTab(
 @Preview(showBackground = true)
 @Composable
 fun FavoriteTabPreview() {
-    val data1 = UserUiData(
-        isFavorite = true,
-        data = UserMetaData(
-            thumbnail = "thumbnail1",
-            title = "title1",
-            url = "http://example.com/1",
-            datetime = "2025-05-18T12:00:00.000+09:00"
-        )
-    )
-    val data2 = UserUiData(
-        isFavorite = false,
-        data = UserMetaData(
-            thumbnail = "thumbnail2",
-            title = "title2",
-            url = "http://example.com/2",
-            datetime = "2025-05-18T13:00:00.000+09:00"
-        )
-    )
-    val data3 = UserUiData(
-        isFavorite = true,
-        data = UserMetaData(
-            thumbnail = "thumbnail3",
-            title = "title3",
-            url = "http://example.com/3",
-            datetime = "2025-05-18T14:00:00.000+09:00"
-        )
-    )
+    val data1 = UserMetaData(
+        thumbnail = "thumbnail1",
+        title = "title1",
+        url = "http://example.com/1",
+        datetime = "2025-05-18T12:00:00.000+09:00"
+    ).toUiData(isFavorite = true)
+
+    val data2 = UserMetaData(
+        thumbnail = "thumbnail2",
+        title = "title2",
+        url = "http://example.com/2",
+        datetime = "2025-05-18T13:00:00.000+09:00"
+    ).toUiData(isFavorite = false)
+
+    val data3 = UserMetaData(
+        thumbnail = "thumbnail3",
+        title = "title3",
+        url = "http://example.com/3",
+        datetime = "2025-05-18T14:00:00.000+09:00"
+    ).toUiData(isFavorite = true)
 
     CommonTheme {
         FavoritesTab(

@@ -1,6 +1,6 @@
 package com.sample.android.ui.feature.main
 
-import com.sample.android.data.UserMetaData
+import com.sample.android.data.model.UserMetaData
 import com.sample.android.domain.entity.User
 import com.sample.android.domain.entity.UserSearchResult
 import com.sample.android.domain.usecase.AddToFavoritesUseCase
@@ -12,7 +12,7 @@ import com.sample.android.ui.feature.main.model.MainIntent
 import com.sample.android.ui.feature.main.model.MainState
 import com.sample.android.ui.feature.main.model.SearchTabBorder
 import com.sample.android.ui.feature.main.model.SearchTabUiData
-import com.sample.android.ui.model.UserUiData
+import com.sample.android.ui.mapper.toUiData
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -65,15 +65,12 @@ class MainViewModelTest {
     )
 
     private val testUserUiData
-        get() = UserUiData(
-            isFavorite = false,
-            data = UserMetaData(
-                title = testUser.login,
-                thumbnail = testUser.avatarUrl,
-                url = testUser.htmlUrl,
-                datetime = null
-            )
-        )
+        get() = UserMetaData(
+            title = testUser.login,
+            thumbnail = testUser.avatarUrl,
+            url = testUser.htmlUrl,
+            datetime = null
+        ).toUiData(isFavorite = false)
 
     @Before
     fun setup() {
@@ -120,8 +117,8 @@ class MainViewModelTest {
         val state = viewModel.state.first()
         assertEquals(2, state.favorites.size)
         assertTrue(state.favorites.all { it.isFavorite })
-        assertEquals(testUser.login, state.favorites[0].data.title)
-        assertEquals(testUser2.login, state.favorites[1].data.title)
+        assertEquals(testUser.login, state.favorites[0].title)
+        assertEquals(testUser2.login, state.favorites[1].title)
     }
 
     @Test
@@ -170,8 +167,8 @@ class MainViewModelTest {
 
         val searchResult1 = state.searches[0] as SearchTabUiData
         val searchResult2 = state.searches[1] as SearchTabUiData
-        assertEquals(testUser.login, searchResult1.data.data.title)
-        assertEquals(testUser2.login, searchResult2.data.data.title)
+        assertEquals(testUser.login, searchResult1.data.title)
+        assertEquals(testUser2.login, searchResult2.data.title)
 
         assertTrue(state.searches[2] is SearchTabBorder)
 
@@ -236,8 +233,8 @@ class MainViewModelTest {
 
         val firstResult = state.searches[0] as SearchTabUiData
         val secondResult = state.searches[2] as SearchTabUiData
-        assertEquals(testUser.login, firstResult.data.data.title)
-        assertEquals(testUser2.login, secondResult.data.data.title)
+        assertEquals(testUser.login, firstResult.data.title)
+        assertEquals(testUser2.login, secondResult.data.title)
     }
 
     @Test

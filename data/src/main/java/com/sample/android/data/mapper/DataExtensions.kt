@@ -1,6 +1,6 @@
-package com.sample.android.mapper
+package com.sample.android.data.mapper
 
-import com.sample.android.data.UserMetaData
+import com.sample.android.data.model.UserMetaData
 import com.sample.android.domain.entity.User
 
 fun User.toUserMetaData(): UserMetaData {

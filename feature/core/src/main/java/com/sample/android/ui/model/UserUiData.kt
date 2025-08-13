@@ -1,16 +1,36 @@
 package com.sample.android.ui.model
 
+import android.os.Build
 import android.os.Parcelable
 import androidx.annotation.Keep
-import com.sample.android.data.UserMetaData
 import kotlinx.parcelize.Parcelize
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Keep
 @Parcelize
 data class UserUiData(
     val isFavorite: Boolean,
-    val data: UserMetaData
-) : Parcelable
+    val title: String?,
+    val thumbnail: String?,
+    val url: String?,
+    val datetime: String?
+) : Parcelable {
+    val timestamp: Long
+        get() {
+            return try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.getDefault()).parse(
+                        datetime ?: return 0L
+                    )?.time ?: 0L
+                } else {
+                    0L
+                }
+            } catch (e: Exception) {
+                0L
+            }
+        }
+}
 
 fun List<UserUiData>.removeUiData(userUiData: UserUiData): List<UserUiData> {
     return this.mapNotNull { data ->

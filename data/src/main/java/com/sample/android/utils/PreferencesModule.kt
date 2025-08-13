@@ -3,7 +3,7 @@ package com.sample.android.utils
 import android.content.Context
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
-import com.sample.android.data.UserMetaData
+import com.sample.android.data.model.UserMetaData
 
 interface PreferencesModule {
     var favorites: List<UserMetaData>

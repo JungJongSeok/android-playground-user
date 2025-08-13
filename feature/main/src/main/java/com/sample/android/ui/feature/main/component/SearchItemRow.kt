@@ -35,14 +35,14 @@ import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
-import com.sample.android.data.UserMetaData
+import com.sample.android.data.model.UserMetaData
 import com.sample.android.feature.main.R
 import com.sample.android.ui.extension.setTimeText
+import com.sample.android.ui.mapper.toUiData
 import com.sample.android.ui.model.UserUiData
 import com.sample.android.ui.theme.ColorBlack44
 import com.sample.android.ui.theme.ColorBlack88
 import com.sample.android.ui.theme.ColorBlackE6
-
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -72,7 +72,7 @@ fun SearchItemRow(
                 .clip(RoundedCornerShape(14.0.dp))
         ) {
             GlideImage(
-                model = item.data.thumbnail,
+                model = item.thumbnail,
                 contentDescription = "thumbnail",
                 loading = placeholder(ColorDrawable(ColorBlackE6.toArgb())),
                 modifier = Modifier.fillMaxSize(),
@@ -111,7 +111,7 @@ fun SearchItemRow(
             ) {
                 Text(
                     modifier = Modifier.weight(1f),
-                    text = item.data.title ?: "",
+                    text = item.title ?: "",
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     fontWeight = FontWeight.Bold,
@@ -121,7 +121,7 @@ fun SearchItemRow(
             }
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = item.data.url ?: "",
+                text = item.url ?: "",
                 minLines = 2,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -133,7 +133,7 @@ fun SearchItemRow(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = item.data.timestamp.setTimeText(context, R.string.pattern_datetime_full),
+                text = item.timestamp.setTimeText(context, R.string.pattern_datetime_full),
                 fontWeight = FontWeight.Normal,
                 fontSize = 12.sp,
                 color = ColorBlack88,
@@ -147,16 +147,12 @@ fun SearchItemRow(
 @Preview(showBackground = true)
 @Composable
 fun SearchItemRowPreview() {
-    // Mock data for preview
-    val mockUserUiData = UserUiData(
-        data = UserMetaData(
-            title = "Sample User Name",
-            thumbnail = "https://via.placeholder.com/300x300",
-            url = "sample@example.com",
-            datetime = "2023-01-01T12:00:00.000Z"
-        ),
-        isFavorite = true
-    )
+    val mockUserUiData = UserMetaData(
+        title = "Sample User Name",
+        thumbnail = "https://via.placeholder.com/300x300",
+        url = "sample@example.com",
+        datetime = "2023-01-01T12:00:00.000Z"
+    ).toUiData(isFavorite = true)
 
     SearchItemRow(
         item = mockUserUiData,

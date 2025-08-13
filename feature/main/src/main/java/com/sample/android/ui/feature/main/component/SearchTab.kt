@@ -36,11 +36,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sample.android.data.UserMetaData
+import com.sample.android.data.model.UserMetaData
 import com.sample.android.feature.main.R
 import com.sample.android.ui.feature.main.model.SearchTabBorder
 import com.sample.android.ui.feature.main.model.SearchTabData
 import com.sample.android.ui.feature.main.model.SearchTabUiData
+import com.sample.android.ui.mapper.toUiData
 import com.sample.android.ui.model.UserUiData
 import com.sample.android.ui.theme.ColorBlack22
 import com.sample.android.ui.theme.ColorBlack88
@@ -218,37 +219,28 @@ fun SearchTab(
 @Composable
 fun SearchTabPreview() {
     val data1 = SearchTabUiData(
-        UserUiData(
-            isFavorite = true,
-            data = UserMetaData(
-                thumbnail = "thumbnail1",
-                title = "title1",
-                url = "http://example.com/1",
-                datetime = "2025-05-18T12:00:00.000+09:00"
-            )
-        )
+        UserMetaData(
+            thumbnail = "thumbnail1",
+            title = "title1",
+            url = "http://example.com/1",
+            datetime = "2025-05-18T12:00:00.000+09:00"
+        ).toUiData(isFavorite = true)
     )
     val data2 = SearchTabUiData(
-        UserUiData(
-            isFavorite = false,
-            data = UserMetaData(
-                thumbnail = "thumbnail2",
-                title = "title2",
-                url = "http://example.com/2",
-                datetime = "2025-05-18T13:00:00.000+09:00"
-            )
-        )
+        UserMetaData(
+            thumbnail = "thumbnail2",
+            title = "title2",
+            url = "http://example.com/2",
+            datetime = "2025-05-18T13:00:00.000+09:00"
+        ).toUiData(isFavorite = false)
     )
     val data3 = SearchTabUiData(
-        UserUiData(
-            isFavorite = true,
-            data = UserMetaData(
-                thumbnail = "thumbnail3",
-                title = "title3",
-                url = "http://example.com/3",
-                datetime = "2025-05-18T14:00:00.000+09:00"
-            )
-        )
+        UserMetaData(
+            thumbnail = "thumbnail3",
+            title = "title3",
+            url = "http://example.com/3",
+            datetime = "2025-05-18T14:00:00.000+09:00"
+        ).toUiData(isFavorite = true)
     )
     val border1 = SearchTabBorder(text = "1", isEnd = false)
     val border2 = SearchTabBorder(text = "2", isEnd = true)
