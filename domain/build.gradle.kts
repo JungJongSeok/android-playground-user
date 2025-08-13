@@ -54,7 +54,6 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
 
-    // Hilt DI (using annotationProcessor instead of kapt)
     implementation(libs.hilt.android)
     annotationProcessor(libs.hilt.compiler)
 

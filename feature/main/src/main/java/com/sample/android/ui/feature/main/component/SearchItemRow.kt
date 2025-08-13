@@ -147,7 +147,6 @@ fun SearchItemRow(
 @Preview(showBackground = true)
 @Composable
 fun SearchItemRowPreview() {
-    // Mock data for preview
     val mockUserUiData = UserMetaData(
         title = "Sample User Name",
         thumbnail = "https://via.placeholder.com/300x300",

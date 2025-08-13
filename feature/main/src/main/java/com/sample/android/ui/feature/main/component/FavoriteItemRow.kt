@@ -123,7 +123,6 @@ fun FavoriteItemRow(
 @Preview(showBackground = true)
 @Composable
 fun FavoriteItemRowPreview() {
-    // Mock data for preview
     val mockUserUiData = UserMetaData(
         title = "Sample Title",
         thumbnail = "https://via.placeholder.com/300x300",

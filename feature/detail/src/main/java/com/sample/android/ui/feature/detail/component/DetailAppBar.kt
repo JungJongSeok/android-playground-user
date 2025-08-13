@@ -38,7 +38,7 @@ fun DetailAppBar(
         BackButton(onClick = onBackClick)
 
         Text(
-            text = currentData?.data?.title ?: "",
+            text = currentData?.title ?: "",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = Color.Black,

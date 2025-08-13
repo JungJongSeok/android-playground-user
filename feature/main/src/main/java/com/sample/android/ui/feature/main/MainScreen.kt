@@ -67,7 +67,6 @@ fun MainRoute(viewModel: MainViewModel = hiltViewModel()) {
 
     val context = LocalContext.current
 
-    // Handle effects
     LaunchedEffect(Unit) {
         viewModel.effect
             .collect { effect ->

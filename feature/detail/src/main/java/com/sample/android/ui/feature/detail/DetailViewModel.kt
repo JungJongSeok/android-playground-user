@@ -2,9 +2,10 @@ package com.sample.android.ui.feature.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sample.android.data.mapper.toUser
+import com.sample.android.data.model.UserMetaData
 import com.sample.android.domain.usecase.AddToFavoritesUseCase
 import com.sample.android.domain.usecase.RemoveFromFavoritesUseCase
-import com.sample.android.data.mapper.toUser
 import com.sample.android.ui.feature.detail.model.DetailEffect
 import com.sample.android.ui.feature.detail.model.DetailIntent
 import com.sample.android.ui.feature.detail.model.DetailState
@@ -69,7 +70,13 @@ class DetailViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = true)
 
             try {
-                val user = userUiData.data.toUser()
+                val userMetaData = UserMetaData(
+                    title = userUiData.title,
+                    thumbnail = userUiData.thumbnail,
+                    url = userUiData.url,
+                    datetime = userUiData.datetime
+                )
+                val user = userMetaData.toUser()
                 removeFromFavoritesUseCase(user)
 
                 val updatedList = _state.value.selectedList.unlike(userUiData)
@@ -103,7 +110,13 @@ class DetailViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = true)
 
             try {
-                val user = userUiData.data.toUser()
+                val userMetaData = UserMetaData(
+                    title = userUiData.title,
+                    thumbnail = userUiData.thumbnail,
+                    url = userUiData.url,
+                    datetime = userUiData.datetime
+                )
+                val user = userMetaData.toUser()
                 addToFavoritesUseCase(user)
 
                 val updatedList = _state.value.selectedList.like(userUiData)

@@ -3,7 +3,6 @@ package com.sample.android.ui.model
 import android.os.Build
 import android.os.Parcelable
 import androidx.annotation.Keep
-import com.sample.android.data.model.UserMetaData
 import kotlinx.parcelize.Parcelize
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -17,7 +16,6 @@ data class UserUiData(
     val url: String?,
     val datetime: String?
 ) : Parcelable {
-    // timestamp 계산 로직을 UserUiData로 이동
     val timestamp: Long
         get() {
             return try {
@@ -32,15 +30,6 @@ data class UserUiData(
                 0L
             }
         }
-
-    // 기존 코드 호환성을 위한 data 프로퍼티
-    val data: UserMetaData
-        get() = UserMetaData(
-            title = this.title,
-            thumbnail = this.thumbnail,
-            url = this.url,
-            datetime = this.datetime
-        )
 }
 
 fun List<UserUiData>.removeUiData(userUiData: UserUiData): List<UserUiData> {

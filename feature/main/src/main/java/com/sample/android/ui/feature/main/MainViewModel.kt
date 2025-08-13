@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sample.android.data.mapper.toUser
 import com.sample.android.data.mapper.toUserMetaData
+import com.sample.android.data.model.UserMetaData
 import com.sample.android.domain.usecase.AddToFavoritesUseCase
 import com.sample.android.domain.usecase.GetFavoritesUseCase
 import com.sample.android.domain.usecase.RemoveFromFavoritesUseCase
@@ -85,12 +86,25 @@ class MainViewModel @Inject constructor(
                 val favoriteList = favorites.map { user ->
                     user.toUserMetaData().toUiData(isFavorite = true)
                 }
-                val favoriteSet = favoriteList.map { it.data }.toSet()
+                val favoriteSet = favoriteList.map {
+                    UserMetaData(
+                        title = it.title,
+                        thumbnail = it.thumbnail,
+                        url = it.url,
+                        datetime = it.datetime
+                    )
+                }.toSet()
                 val searchList = state.value.searches.map { search ->
                     if (search is SearchTabUiData) {
+                        val searchUserMetaData = UserMetaData(
+                            title = search.data.title,
+                            thumbnail = search.data.thumbnail,
+                            url = search.data.url,
+                            datetime = search.data.datetime
+                        )
                         SearchTabUiData(
-                            search.data.data.toUiData(
-                                isFavorite = favoriteSet.contains(search.data.data)
+                            search.data.copy(
+                                isFavorite = favoriteSet.contains(searchUserMetaData)
                             )
                         )
                     } else {
@@ -205,7 +219,13 @@ class MainViewModel @Inject constructor(
                 return@launch
             }
             try {
-                val user = userUiData.data.toUser()
+                val userMetaData = UserMetaData(
+                    title = userUiData.title,
+                    thumbnail = userUiData.thumbnail,
+                    url = userUiData.url,
+                    datetime = userUiData.datetime
+                )
+                val user = userMetaData.toUser()
                 addToFavoritesUseCase(user)
 
                 val searchList = state.value.searches.like(userUiData)
@@ -233,7 +253,13 @@ class MainViewModel @Inject constructor(
                 return@launch
             }
             try {
-                val user = userUiData.data.toUser()
+                val userMetaData = UserMetaData(
+                    title = userUiData.title,
+                    thumbnail = userUiData.thumbnail,
+                    url = userUiData.url,
+                    datetime = userUiData.datetime
+                )
+                val user = userMetaData.toUser()
                 removeFromFavoritesUseCase(user)
 
                 val searchList = state.value.searches.unlike(userUiData)
