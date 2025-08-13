@@ -5,11 +5,10 @@
 - Kotlin
   - Kotlin (kotlin-android)
   - Compose
-  - ViewBinding / DataBinding layout
 - Android architecture components
-  - Google app architecture
+  - Clean architecture
   - DI Component
-  - MVVM pattern
+  - MVI pattern
   - Multi module
 - Network
   - Okhttp3
@@ -25,9 +24,10 @@
   - Okhttp3-mockwebserver
   - Robolectric
 
-![structure](https://developer.android.com/static/topic/libraries/architecture/images/mad-arch-overview.png)
+![structure](https://raw.githubusercontent.com/bufferapp/android-clean-architecture-boilerplate/master/art/architecture.png)
 
 
 - Code coverage
   - All features have accompanying test code, and the test coverage is maintained at 80% or higher.
-<img width="1088" height="350" alt="image" src="https://github.com/user-attachments/assets/fdb7dff3-3dc8-42e6-82ab-c9ed80e80c93" />
+<img width="1088" height="413" alt="image" src="https://github.com/user-attachments/assets/e55aff3f-5f76-4fe6-95bc-4dda2581ec8b" />
+
