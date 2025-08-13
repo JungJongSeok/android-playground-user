@@ -40,8 +40,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.sample.android.network.NetworkCommonException
 import com.sample.android.ui.feature.detail.DetailActivity
 import com.sample.android.ui.feature.detail.model.DetailExtraData
-import com.sample.android.ui.feature.main.coponent.FavoritesTab
-import com.sample.android.ui.feature.main.coponent.SearchTab
+import com.sample.android.ui.feature.main.component.FavoritesTab
+import com.sample.android.ui.feature.main.component.SearchTab
 import com.sample.android.ui.feature.main.model.MainEffect
 import com.sample.android.ui.feature.main.model.MainIntent
 import com.sample.android.ui.feature.main.model.MainTab

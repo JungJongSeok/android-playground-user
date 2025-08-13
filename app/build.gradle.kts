@@ -45,8 +45,6 @@ android {
     buildFeatures {
         buildConfig = true
         compose = true
-        viewBinding = true
-        dataBinding = true
     }
 
     testOptions {
@@ -140,6 +138,7 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))

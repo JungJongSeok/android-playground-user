@@ -1,4 +1,4 @@
-package com.sample.android.ui.feature.main.coponent
+package com.sample.android.ui.feature.main.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

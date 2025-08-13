@@ -6,4 +6,5 @@
     <string name="main_tab_favorite">즐겨찾기</string>
     <string name="search_hint_text">Input</string>
     <string name="search_end_text">마지막</string>
+    <string name="common_network_error">Network error</string>
 </resources>

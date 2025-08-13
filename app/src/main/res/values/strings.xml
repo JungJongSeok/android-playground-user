@@ -6,4 +6,5 @@
     <string name="main_tab_favorite">Favorite</string>
     <string name="search_hint_text">Input</string>
     <string name="search_end_text">Last page</string>
+    <string name="common_network_error">Network error</string>
 </resources>
