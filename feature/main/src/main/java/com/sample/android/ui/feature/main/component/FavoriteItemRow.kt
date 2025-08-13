@@ -35,9 +35,10 @@ import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
-import com.sample.android.data.UserMetaData
+import com.sample.android.data.model.UserMetaData
 import com.sample.android.feature.main.R
 import com.sample.android.ui.extension.setTimeText
+import com.sample.android.ui.mapper.toUiData
 import com.sample.android.ui.model.UserUiData
 import com.sample.android.ui.theme.ColorBlack88
 import com.sample.android.ui.theme.ColorBlackE6
@@ -69,7 +70,7 @@ fun FavoriteItemRow(
                 .clip(RoundedCornerShape(14.0.dp))
         ) {
             GlideImage(
-                model = item.data.thumbnail,
+                model = item.thumbnail,
                 contentDescription = "thumbnail",
                 loading = placeholder(ColorDrawable(ColorBlackE6.toArgb())),
                 modifier = Modifier.fillMaxSize(),
@@ -98,7 +99,7 @@ fun FavoriteItemRow(
         Spacer(modifier = Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = item.data.title ?: "",
+                text = item.title ?: "",
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.Bold,
@@ -109,7 +110,7 @@ fun FavoriteItemRow(
         }
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = item.data.timestamp.setTimeText(context, R.string.pattern_datetime_short),
+            text = item.timestamp.setTimeText(context, R.string.pattern_datetime_short),
             overflow = TextOverflow.Ellipsis,
             fontWeight = FontWeight.Normal,
             fontSize = 13.sp,
@@ -123,15 +124,12 @@ fun FavoriteItemRow(
 @Composable
 fun FavoriteItemRowPreview() {
     // Mock data for preview
-    val mockUserUiData = UserUiData(
-        data = UserMetaData(
-            title = "Sample Title",
-            thumbnail = "https://via.placeholder.com/300x300",
-            url = "sample@example.com",
-            datetime = "2023-01-01T12:00:00.000Z"
-        ),
-        isFavorite = true
-    )
+    val mockUserUiData = UserMetaData(
+        title = "Sample Title",
+        thumbnail = "https://via.placeholder.com/300x300",
+        url = "sample@example.com",
+        datetime = "2023-01-01T12:00:00.000Z"
+    ).toUiData(isFavorite = true)
 
     FavoriteItemRow(
         item = mockUserUiData,

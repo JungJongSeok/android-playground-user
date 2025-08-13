@@ -3,7 +3,7 @@ package com.sample.android.utils
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.sample.android.data.UserMetaData
+import com.sample.android.data.model.UserMetaData
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK

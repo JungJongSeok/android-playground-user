@@ -1,5 +1,6 @@
 package com.sample.android.repository
 
+import com.sample.android.data.repository.SearchRepositoryImpl
 import com.sample.android.network.UserService
 import com.sample.android.network.response.UserDob
 import com.sample.android.network.response.UserResponse

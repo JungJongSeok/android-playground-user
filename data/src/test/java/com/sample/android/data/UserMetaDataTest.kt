@@ -1,6 +1,8 @@
 package com.sample.android.data
 
-import android.os.Build
+import com.sample.android.data.model.UserMetaData
+import com.sample.android.data.model.UserMetaDataList
+import com.sample.android.data.model.toData
 import com.sample.android.network.response.UserDob
 import com.sample.android.network.response.UserName
 import com.sample.android.network.response.UserPicture
@@ -11,123 +13,6 @@ import junit.framework.TestCase.assertTrue
 import org.junit.Test
 
 class UserMetaDataTest {
-
-    @Test
-    fun `timestamp returns correct timestamp from datetime`() {
-        val datetime = "2025-05-19T09:42:29.000+09:00"
-        val userMetaData = UserMetaData(
-            title = "title",
-            thumbnail = "thumbnail",
-            url = "url",
-            datetime = datetime
-        )
-
-        val result = userMetaData.timestamp
-
-        // API level 미만에서는 0을 반환하므로 체크
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            assertTrue(result > 0)
-        } else {
-            assertEquals(0L, result)
-        }
-    }
-
-    @Test
-    fun `timestamp returns 0 when datetime is null`() {
-        val userMetaData = UserMetaData(
-            title = "title",
-            thumbnail = "thumbnail",
-            url = "url",
-            datetime = null
-        )
-
-        val result = userMetaData.timestamp
-
-        assertEquals(0L, result)
-    }
-
-    @Test
-    fun `timestamp returns 0 when datetime is invalid format`() {
-        val userMetaData = UserMetaData(
-            title = "title",
-            thumbnail = "thumbnail",
-            url = "url",
-            datetime = "invalid-datetime"
-        )
-
-        val result = userMetaData.timestamp
-
-        assertEquals(0L, result)
-    }
-
-    @Test
-    fun `timestamp returns 0 when datetime is empty string`() {
-        val userMetaData = UserMetaData(
-            title = "title",
-            thumbnail = "thumbnail",
-            url = "url",
-            datetime = ""
-        )
-
-        val result = userMetaData.timestamp
-
-        assertEquals(0L, result)
-    }
-
-    @Test
-    fun `timestamp handles different date formats gracefully`() {
-        val datetime = "2025-05-19T09:42:29.123Z"
-        val userMetaData = UserMetaData(
-            title = "title",
-            thumbnail = "thumbnail",
-            url = "url",
-            datetime = datetime
-        )
-
-        val result = userMetaData.timestamp
-
-        // 이 형식도 API level 미만에서는 0을 반환하므로 체크
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            assertTrue(result > 0)
-        } else {
-            assertEquals(0L, result)
-        }
-    }
-
-    @Test
-    fun `timestamp handles different timezone formats`() {
-        val datetime = "2025-05-19T09:42:29.000+05:30"
-        val userMetaData = UserMetaData(
-            title = "title",
-            thumbnail = "thumbnail",
-            url = "url",
-            datetime = datetime
-        )
-
-        val result = userMetaData.timestamp
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            assertTrue(result > 0)
-        } else {
-            assertEquals(0L, result)
-        }
-    }
-
-    @Test
-    fun `timestamp handles date without milliseconds`() {
-        val datetime = "2025-05-19T09:42:29+09:00"
-        val userMetaData = UserMetaData(
-            title = "title",
-            thumbnail = "thumbnail",
-            url = "url",
-            datetime = datetime
-        )
-
-        val result = userMetaData.timestamp
-
-        // 이 형식은 실패할 것이므로 0을 반환해야 함
-        assertEquals(0L, result)
-    }
 
     @Test
     fun `describeContents returns 0`() {

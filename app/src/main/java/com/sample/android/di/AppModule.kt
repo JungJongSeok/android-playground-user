@@ -5,8 +5,8 @@ import com.sample.android.domain.repository.FavoriteRepository
 import com.sample.android.domain.repository.SearchRepository
 import com.sample.android.network.UserService
 import com.sample.android.network.UserServiceImpl
-import com.sample.android.repository.FavoriteRepositoryImpl
-import com.sample.android.repository.SearchRepositoryImpl
+import com.sample.android.data.repository.FavoriteRepositoryImpl
+import com.sample.android.data.repository.SearchRepositoryImpl
 import com.sample.android.utils.PreferencesModule
 import com.sample.android.utils.PreferencesModuleImpl
 import dagger.Module

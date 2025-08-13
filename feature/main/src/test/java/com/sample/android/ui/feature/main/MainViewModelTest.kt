@@ -1,6 +1,6 @@
 package com.sample.android.ui.feature.main
 
-import com.sample.android.data.UserMetaData
+import com.sample.android.data.model.UserMetaData
 import com.sample.android.domain.entity.User
 import com.sample.android.domain.entity.UserSearchResult
 import com.sample.android.domain.usecase.AddToFavoritesUseCase
@@ -12,7 +12,7 @@ import com.sample.android.ui.feature.main.model.MainIntent
 import com.sample.android.ui.feature.main.model.MainState
 import com.sample.android.ui.feature.main.model.SearchTabBorder
 import com.sample.android.ui.feature.main.model.SearchTabUiData
-import com.sample.android.ui.model.UserUiData
+import com.sample.android.ui.mapper.toUiData
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -65,15 +65,12 @@ class MainViewModelTest {
     )
 
     private val testUserUiData
-        get() = UserUiData(
-            isFavorite = false,
-            data = UserMetaData(
-                title = testUser.login,
-                thumbnail = testUser.avatarUrl,
-                url = testUser.htmlUrl,
-                datetime = null
-            )
-        )
+        get() = UserMetaData(
+            title = testUser.login,
+            thumbnail = testUser.avatarUrl,
+            url = testUser.htmlUrl,
+            datetime = null
+        ).toUiData(isFavorite = false)
 
     @Before
     fun setup() {

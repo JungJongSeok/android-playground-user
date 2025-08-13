@@ -32,8 +32,8 @@ fun DetailImagePager(
 @Composable
 private fun DetailImageItem(userUiData: UserUiData) {
     GlideImage(
-        model = userUiData.data.thumbnail,
-        contentDescription = userUiData.data.title,
+        model = userUiData.thumbnail,
+        contentDescription = userUiData.title,
         modifier = Modifier.fillMaxSize(),
         contentScale = ContentScale.Fit
     )

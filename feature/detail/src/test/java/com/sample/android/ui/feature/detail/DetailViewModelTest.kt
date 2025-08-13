@@ -1,13 +1,13 @@
 package com.sample.android.ui.feature.detail
 
-import com.sample.android.data.UserMetaData
+import com.sample.android.data.model.UserMetaData
 import com.sample.android.domain.entity.User
 import com.sample.android.domain.usecase.AddToFavoritesUseCase
 import com.sample.android.domain.usecase.RemoveFromFavoritesUseCase
 import com.sample.android.ui.feature.detail.model.DetailEffect
 import com.sample.android.ui.feature.detail.model.DetailIntent
 import com.sample.android.ui.feature.detail.model.DetailState
-import com.sample.android.ui.model.UserUiData
+import com.sample.android.ui.mapper.toUiData
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -45,10 +45,7 @@ class DetailViewModelTest {
         datetime = "2023-01-01T12:00:00.000Z"
     )
 
-    private val testUserUiData = UserUiData(
-        isFavorite = false,
-        data = testUserMetaData
-    )
+    private val testUserUiData = testUserMetaData.toUiData(isFavorite = false)
 
     @Before
     fun setup() {
@@ -65,7 +62,7 @@ class DetailViewModelTest {
         // Given
         val selectedList = listOf(
             testUserUiData,
-            testUserUiData.copy(data = testUserMetaData.copy(title = "Second User"))
+            testUserMetaData.copy(title = "Second User").toUiData(isFavorite = false)
         )
 
         // When
@@ -82,7 +79,7 @@ class DetailViewModelTest {
         // Given
         val selectedList = listOf(
             testUserUiData,
-            testUserUiData.copy(data = testUserMetaData.copy(title = "Second User"))
+            testUserMetaData.copy(title = "Second User").toUiData(isFavorite = false)
         )
         viewModel.handleIntent(DetailIntent.Initialize(selectedList))
 
@@ -144,7 +141,7 @@ class DetailViewModelTest {
     @Test
     fun `toggle favorite for favorite user should remove from favorites`() = testScope.runTest {
         // Given
-        val favoriteUserUiData = testUserUiData.copy(isFavorite = true)
+        val favoriteUserUiData = testUserMetaData.toUiData(isFavorite = true)
         val selectedList = listOf(favoriteUserUiData)
         viewModel.handleIntent(DetailIntent.Initialize(selectedList))
 

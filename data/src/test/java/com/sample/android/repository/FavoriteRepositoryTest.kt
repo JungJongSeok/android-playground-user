@@ -1,6 +1,7 @@
 package com.sample.android.repository
 
-import com.sample.android.data.UserMetaData
+import com.sample.android.data.model.UserMetaData
+import com.sample.android.data.repository.FavoriteRepositoryImpl
 import com.sample.android.domain.entity.User
 import com.sample.android.utils.PreferencesModule
 import io.mockk.every

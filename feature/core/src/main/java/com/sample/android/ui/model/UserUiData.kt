@@ -1,16 +1,47 @@
 package com.sample.android.ui.model
 
+import android.os.Build
 import android.os.Parcelable
 import androidx.annotation.Keep
-import com.sample.android.data.UserMetaData
+import com.sample.android.data.model.UserMetaData
 import kotlinx.parcelize.Parcelize
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Keep
 @Parcelize
 data class UserUiData(
     val isFavorite: Boolean,
+    val title: String?,
+    val thumbnail: String?,
+    val url: String?,
+    val datetime: String?
+) : Parcelable {
+    // timestamp 계산 로직을 UserUiData로 이동
+    val timestamp: Long
+        get() {
+            return try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.getDefault()).parse(
+                        datetime ?: return 0L
+                    )?.time ?: 0L
+                } else {
+                    0L
+                }
+            } catch (e: Exception) {
+                0L
+            }
+        }
+
+    // 기존 코드 호환성을 위한 data 프로퍼티
     val data: UserMetaData
-) : Parcelable
+        get() = UserMetaData(
+            title = this.title,
+            thumbnail = this.thumbnail,
+            url = this.url,
+            datetime = this.datetime
+        )
+}
 
 fun List<UserUiData>.removeUiData(userUiData: UserUiData): List<UserUiData> {
     return this.mapNotNull { data ->

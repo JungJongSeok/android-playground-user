@@ -1,9 +1,9 @@
-package com.sample.android.repository
+package com.sample.android.data.repository
 
 import com.sample.android.domain.entity.User
 import com.sample.android.domain.repository.FavoriteRepository
-import com.sample.android.mapper.toUser
-import com.sample.android.mapper.toUserMetaData
+import com.sample.android.data.mapper.toUser
+import com.sample.android.data.mapper.toUserMetaData
 import com.sample.android.utils.PreferencesModule
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers

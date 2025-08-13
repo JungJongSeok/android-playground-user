@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sample.android.domain.usecase.AddToFavoritesUseCase
 import com.sample.android.domain.usecase.RemoveFromFavoritesUseCase
-import com.sample.android.mapper.toUser
+import com.sample.android.data.mapper.toUser
 import com.sample.android.ui.feature.detail.model.DetailEffect
 import com.sample.android.ui.feature.detail.model.DetailIntent
 import com.sample.android.ui.feature.detail.model.DetailState

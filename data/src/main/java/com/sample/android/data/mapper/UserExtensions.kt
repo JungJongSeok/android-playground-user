@@ -1,4 +1,4 @@
-package com.sample.android.mapper
+package com.sample.android.data.mapper
 
 import com.sample.android.domain.entity.User
 import com.sample.android.domain.entity.UserSearchResult
