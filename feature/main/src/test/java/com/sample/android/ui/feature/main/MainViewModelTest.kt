@@ -117,8 +117,8 @@ class MainViewModelTest {
         val state = viewModel.state.first()
         assertEquals(2, state.favorites.size)
         assertTrue(state.favorites.all { it.isFavorite })
-        assertEquals(testUser.login, state.favorites[0].data.title)
-        assertEquals(testUser2.login, state.favorites[1].data.title)
+        assertEquals(testUser.login, state.favorites[0].title)
+        assertEquals(testUser2.login, state.favorites[1].title)
     }
 
     @Test
@@ -167,8 +167,8 @@ class MainViewModelTest {
 
         val searchResult1 = state.searches[0] as SearchTabUiData
         val searchResult2 = state.searches[1] as SearchTabUiData
-        assertEquals(testUser.login, searchResult1.data.data.title)
-        assertEquals(testUser2.login, searchResult2.data.data.title)
+        assertEquals(testUser.login, searchResult1.data.title)
+        assertEquals(testUser2.login, searchResult2.data.title)
 
         assertTrue(state.searches[2] is SearchTabBorder)
 
@@ -233,8 +233,8 @@ class MainViewModelTest {
 
         val firstResult = state.searches[0] as SearchTabUiData
         val secondResult = state.searches[2] as SearchTabUiData
-        assertEquals(testUser.login, firstResult.data.data.title)
-        assertEquals(testUser2.login, secondResult.data.data.title)
+        assertEquals(testUser.login, firstResult.data.title)
+        assertEquals(testUser2.login, secondResult.data.title)
     }
 
     @Test
