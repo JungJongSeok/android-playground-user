@@ -1,4 +1,4 @@
-package com.sample.android.ui.feature.main.coponent
+package com.sample.android.ui.feature.main.component
 
 import android.graphics.drawable.ColorDrawable
 import androidx.compose.foundation.BorderStroke
@@ -9,11 +9,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -39,29 +39,32 @@ import com.sample.android.R
 import com.sample.android.data.UserMetaData
 import com.sample.android.ui.extension.setTimeText
 import com.sample.android.ui.feature.main.model.UserUiData
+import com.sample.android.ui.theme.ColorBlack44
 import com.sample.android.ui.theme.ColorBlack88
 import com.sample.android.ui.theme.ColorBlackE6
 
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun FavoriteItemRow(
+fun SearchItemRow(
     item: UserUiData,
     onFavoriteToggle: (UserUiData) -> Unit,
     onClick: (UserUiData) -> Unit
 ) {
     val context = LocalContext.current
-    Column(
+    Row(
         modifier = Modifier
+            .fillMaxWidth()
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = { onClick(item) })
     ) {
+        Spacer(modifier = Modifier.width(12.dp))
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
+                .size(90.dp)
+                .align(Alignment.CenterVertically)
                 .border(
                     border = BorderStroke(width = 1.dp, color = ColorBlackE6),
                     shape = RoundedCornerShape(14.0.dp)
@@ -75,57 +78,79 @@ fun FavoriteItemRow(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-            Icon(
-                painter = painterResource(
-                    id = if (item.isFavorite) {
-                        R.drawable.icon_like_on
-                    } else {
-                        R.drawable.icon_like_off
-                    }
-                ),
-                contentDescription = "favorite like button",
+            Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(12.dp)
+                    .size(36.dp)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = { onFavoriteToggle(item) },
+                    )
+            ) {
+                Icon(
+                    painter = painterResource(
+                        id = if (item.isFavorite) {
+                            R.drawable.icon_like_on
+                        } else {
+                            R.drawable.icon_like_off
+                        }
                     ),
-                tint = Color.Unspecified
-            )
+                    contentDescription = "favorite like button",
+                    modifier = Modifier
+                        .align(alignment = Alignment.Center)
+                        .size(22.dp),
+                    tint = Color.Unspecified
+                )
+            }
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Spacer(modifier = Modifier.width(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = item.data.title ?: "",
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = Color.Black
+                )
+            }
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = item.data.title ?: "",
-                maxLines = 1,
+                text = item.data.url ?: "",
+                minLines = 2,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                color = Color.Black,
-                modifier = Modifier.weight(1f)
+                fontWeight = FontWeight.Normal,
+                fontSize = 13.sp,
+                lineHeight = 16.sp,
+                color = ColorBlack44,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = item.data.timestamp.setTimeText(context, R.string.pattern_datetime_full),
+                fontWeight = FontWeight.Normal,
+                fontSize = 12.sp,
+                color = ColorBlack88,
+                modifier = Modifier.fillMaxWidth()
             )
         }
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = item.data.timestamp.setTimeText(context, R.string.pattern_datetime_short),
-            overflow = TextOverflow.Ellipsis,
-            fontWeight = FontWeight.Normal,
-            fontSize = 13.sp,
-            color = ColorBlack88,
-            modifier = Modifier.fillMaxWidth()
-        )
+        Spacer(modifier = Modifier.width(12.dp))
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun FavoriteItemRowPreview() {
+fun SearchItemRowPreview() {
     // Mock data for preview
     val mockUserUiData = UserUiData(
         data = UserMetaData(
-            title = "Sample Title",
+            title = "Sample User Name",
             thumbnail = "https://via.placeholder.com/300x300",
             url = "sample@example.com",
             datetime = "2023-01-01T12:00:00.000Z"
@@ -133,7 +158,7 @@ fun FavoriteItemRowPreview() {
         isFavorite = true
     )
 
-    FavoriteItemRow(
+    SearchItemRow(
         item = mockUserUiData,
         onFavoriteToggle = { },
         onClick = { }

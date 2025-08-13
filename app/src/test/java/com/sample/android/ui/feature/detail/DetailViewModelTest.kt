@@ -4,6 +4,9 @@ import com.sample.android.data.UserMetaData
 import com.sample.android.domain.entity.User
 import com.sample.android.domain.usecase.AddToFavoritesUseCase
 import com.sample.android.domain.usecase.RemoveFromFavoritesUseCase
+import com.sample.android.ui.feature.detail.model.DetailEffect
+import com.sample.android.ui.feature.detail.model.DetailIntent
+import com.sample.android.ui.feature.detail.model.DetailState
 import com.sample.android.ui.feature.main.model.UserUiData
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -19,6 +22,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -34,11 +38,16 @@ class DetailViewModelTest {
 
     private lateinit var viewModel: DetailViewModel
 
-    private val testUserData = UserMetaData(
+    private val testUserMetaData = UserMetaData(
         title = "Test User",
         thumbnail = "https://example.com/image.jpg",
         url = "test@example.com",
         datetime = "2023-01-01T12:00:00.000Z"
+    )
+
+    private val testUserUiData = UserUiData(
+        isFavorite = false,
+        data = testUserMetaData
     )
 
     @Before
@@ -52,138 +61,195 @@ class DetailViewModelTest {
     }
 
     @Test
-    fun `setUiData should update current list`() = testScope.runTest {
-        val userUiDataList = listOf(
-            UserUiData(isFavorite = false, data = testUserData),
-            UserUiData(isFavorite = true, data = testUserData.copy(title = "Second User"))
+    fun `initialize intent should set selected list and current data`() = testScope.runTest {
+        // Given
+        val selectedList = listOf(
+            testUserUiData,
+            testUserUiData.copy(data = testUserMetaData.copy(title = "Second User"))
         )
 
-        viewModel.setUiData(userUiDataList)
+        // When
+        viewModel.handleIntent(DetailIntent.Initialize(selectedList))
 
-        val currentList = viewModel.currentList
-        assertEquals(2, currentList.size)
-        assertEquals(userUiDataList[0], currentList[0])
-        assertEquals(userUiDataList[1], currentList[1])
+        // Then
+        val state = viewModel.state.value
+        assertEquals(selectedList, state.selectedList)
+        assertEquals(selectedList.first(), state.currentData)
     }
 
     @Test
-    fun `setCurrentData should emit current data at position`() = testScope.runTest {
-        val userUiDataList = listOf(
-            UserUiData(isFavorite = false, data = testUserData),
-            UserUiData(isFavorite = true, data = testUserData.copy(title = "Second User"))
+    fun `setCurrentPosition intent should update current data`() = testScope.runTest {
+        // Given
+        val selectedList = listOf(
+            testUserUiData,
+            testUserUiData.copy(data = testUserMetaData.copy(title = "Second User"))
         )
-        viewModel.setUiData(userUiDataList)
+        viewModel.handleIntent(DetailIntent.Initialize(selectedList))
 
-        val emissions = mutableListOf<UserUiData>()
-        val job = launch {
-            viewModel.currentData.toList(emissions)
-        }
+        // When
+        viewModel.handleIntent(DetailIntent.SetCurrentPosition(1))
 
-        viewModel.setCurrentData(1)
-        advanceUntilIdle()
-
-        assertEquals(1, emissions.size)
-        assertEquals(userUiDataList[1], emissions[0])
-
-        job.cancel()
+        // Then
+        val state = viewModel.state.value
+        assertEquals(selectedList[1], state.currentData)
     }
 
     @Test
-    fun `setCurrentData with invalid position should not emit`() = testScope.runTest {
-        val userUiDataList = listOf(
-            UserUiData(isFavorite = false, data = testUserData)
-        )
-        viewModel.setUiData(userUiDataList)
+    fun `setCurrentPosition with invalid position should handle gracefully`() = testScope.runTest {
+        // Given
+        val selectedList = listOf(testUserUiData)
+        viewModel.handleIntent(DetailIntent.Initialize(selectedList))
 
-        val emissions = mutableListOf<UserUiData>()
-        val job = launch {
-            viewModel.currentData.toList(emissions)
-        }
+        // When
+        viewModel.handleIntent(DetailIntent.SetCurrentPosition(10))
 
-        viewModel.setCurrentData(10) // Invalid position
-        advanceUntilIdle()
-
-        assertEquals(0, emissions.size)
-
-        job.cancel()
+        // Then
+        val state = viewModel.state.value
+        assertNull(state.currentData)
     }
 
     @Test
-    fun `likeFavoriteData should add to use case and update state`() = testScope.runTest {
-        val userUiData = UserUiData(isFavorite = false, data = testUserData)
-        val userUiDataList = listOf(userUiData)
-        viewModel.setUiData(userUiDataList)
+    fun `toggle favorite for non-favorite user should add to favorites`() = testScope.runTest {
+        // Given
+        val selectedList = listOf(testUserUiData)
+        viewModel.handleIntent(DetailIntent.Initialize(selectedList))
 
-        val currentDataEmissions = mutableListOf<UserUiData>()
-        val currentDataJob = launch {
-            viewModel.currentData.toList(currentDataEmissions)
-        }
+        val stateEmissions = mutableListOf<DetailState>()
+        val effectEmissions = mutableListOf<DetailEffect?>()
 
-        viewModel.likeFavoriteData(userUiData)
+        val stateJob = launch { viewModel.state.toList(stateEmissions) }
+        val effectJob = launch { viewModel.effect.toList(effectEmissions) }
+
+        // When
+        viewModel.handleIntent(DetailIntent.ToggleFavorite(testUserUiData))
         advanceUntilIdle()
 
+        // Then
         coVerify { addToFavoritesUseCase(any<User>()) }
 
-        val currentList = viewModel.currentList
-        assertTrue(currentList[0].isFavorite)
+        // Check final state
+        val finalState = viewModel.state.value
+        assertFalse(finalState.isLoading)
+        assertTrue(finalState.selectedList.first().isFavorite)
+        assertTrue(finalState.currentData!!.isFavorite)
 
-        val isChanged = viewModel.isChangedFavorite.value
-        assertTrue(isChanged)
+        // Check effect was emitted
+        val favoriteChangedEffect = effectEmissions.find { it is DetailEffect.FavoriteChanged }
+        assertTrue(favoriteChangedEffect is DetailEffect.FavoriteChanged)
 
-        assertEquals(1, currentDataEmissions.size)
-        assertTrue(currentDataEmissions[0].isFavorite)
-
-        currentDataJob.cancel()
+        stateJob.cancel()
+        effectJob.cancel()
     }
 
     @Test
-    fun `unlikeFavoriteData should remove from use case and update state`() = testScope.runTest {
-        val userUiData = UserUiData(isFavorite = true, data = testUserData)
-        val userUiDataList = listOf(userUiData)
-        viewModel.setUiData(userUiDataList)
+    fun `toggle favorite for favorite user should remove from favorites`() = testScope.runTest {
+        // Given
+        val favoriteUserUiData = testUserUiData.copy(isFavorite = true)
+        val selectedList = listOf(favoriteUserUiData)
+        viewModel.handleIntent(DetailIntent.Initialize(selectedList))
 
-        val currentDataEmissions = mutableListOf<UserUiData>()
-        val currentDataJob = launch {
-            viewModel.currentData.toList(currentDataEmissions)
-        }
+        val stateEmissions = mutableListOf<DetailState>()
+        val effectEmissions = mutableListOf<DetailEffect?>()
 
-        viewModel.unlikeFavoriteData(userUiData)
+        val stateJob = launch { viewModel.state.toList(stateEmissions) }
+        val effectJob = launch { viewModel.effect.toList(effectEmissions) }
+
+        // When
+        viewModel.handleIntent(DetailIntent.ToggleFavorite(favoriteUserUiData))
         advanceUntilIdle()
 
+        // Then
         coVerify { removeFromFavoritesUseCase(any<User>()) }
 
-        val currentList = viewModel.currentList
-        assertFalse(currentList[0].isFavorite)
+        // Check final state
+        val finalState = viewModel.state.value
+        assertFalse(finalState.isLoading)
+        assertFalse(finalState.selectedList.first().isFavorite)
+        assertFalse(finalState.currentData!!.isFavorite)
 
-        val isChanged = viewModel.isChangedFavorite.value
-        assertTrue(isChanged)
+        // Check effect was emitted
+        val favoriteChangedEffect = effectEmissions.find { it is DetailEffect.FavoriteChanged }
+        assertTrue(favoriteChangedEffect is DetailEffect.FavoriteChanged)
 
-        assertEquals(1, currentDataEmissions.size)
-        assertFalse(currentDataEmissions[0].isFavorite)
-
-        currentDataJob.cancel()
+        stateJob.cancel()
+        effectJob.cancel()
     }
 
     @Test
-    fun `concurrent favorite operations should be handled safely`() = testScope.runTest {
-        val userUiData = UserUiData(isFavorite = false, data = testUserData)
-        val userUiDataList = listOf(userUiData)
-        viewModel.setUiData(userUiDataList)
+    fun `favorite operation error should update error state and emit error effect`() =
+        testScope.runTest {
+            // Given
+            val errorMessage = "Network error"
+            coEvery { addToFavoritesUseCase(any()) } throws Exception(errorMessage)
 
-        // When - first operation
-        viewModel.likeFavoriteData(userUiData)
+            val selectedList = listOf(testUserUiData)
+            viewModel.handleIntent(DetailIntent.Initialize(selectedList))
+
+            val effectEmissions = mutableListOf<DetailEffect?>()
+            val effectJob = launch { viewModel.effect.toList(effectEmissions) }
+
+        // When
+        viewModel.handleIntent(DetailIntent.ToggleFavorite(testUserUiData))
         advanceUntilIdle()
 
-        // Then - verify first operation completed
+        // Then
+        val finalState = viewModel.state.value
+        assertFalse(finalState.isLoading)
+        assertEquals(errorMessage, finalState.error)
+
+        // Check error effect was emitted
+        val errorEffect = effectEmissions.find { it is DetailEffect.ShowError }
+        assertTrue(errorEffect is DetailEffect.ShowError)
+        assertEquals(errorMessage, (errorEffect as DetailEffect.ShowError).message)
+
+        effectJob.cancel()
+    }
+
+    @Test
+    fun `concurrent favorite operations should be prevented by lock`() = testScope.runTest {
+        // Given
+        val selectedList = listOf(testUserUiData)
+        viewModel.handleIntent(DetailIntent.Initialize(selectedList))
+
+        // Make the use case slow to simulate concurrent calls
+        coEvery { addToFavoritesUseCase(any()) } coAnswers {
+            kotlinx.coroutines.delay(100)
+        }
+
+        // When - fire multiple concurrent requests
+        viewModel.handleIntent(DetailIntent.ToggleFavorite(testUserUiData))
+        viewModel.handleIntent(DetailIntent.ToggleFavorite(testUserUiData))
+        viewModel.handleIntent(DetailIntent.ToggleFavorite(testUserUiData))
+        advanceUntilIdle()
+
+        // Then - use case should only be called once due to lock
         coVerify(exactly = 1) { addToFavoritesUseCase(any<User>()) }
-        assertTrue(viewModel.currentList[0].isFavorite)
+    }
 
-        // When - second operation
-        viewModel.unlikeFavoriteData(userUiData.copy(isFavorite = true))
+    @Test
+    fun `clearEffect should set effect to null`() = testScope.runTest {
+        // Given - set up some effect first
+        val selectedList = listOf(testUserUiData)
+        viewModel.handleIntent(DetailIntent.Initialize(selectedList))
+        viewModel.handleIntent(DetailIntent.ToggleFavorite(testUserUiData))
         advanceUntilIdle()
 
-        // Then - verify second operation completed
-        coVerify(exactly = 1) { removeFromFavoritesUseCase(any<User>()) }
-        assertFalse(viewModel.currentList[0].isFavorite)
+        // When
+        viewModel.clearEffect()
+
+        // Then
+        assertNull(viewModel.effect.value)
+    }
+
+    @Test
+    fun `initial state should have empty values`() {
+        // Given - fresh viewModel
+        val initialState = viewModel.state.value
+
+        // Then
+        assertTrue(initialState.selectedList.isEmpty())
+        assertNull(initialState.currentData)
+        assertFalse(initialState.isLoading)
+        assertNull(initialState.error)
     }
 }

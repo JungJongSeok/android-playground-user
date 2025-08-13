@@ -5,13 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.sample.android.domain.usecase.AddToFavoritesUseCase
 import com.sample.android.domain.usecase.RemoveFromFavoritesUseCase
 import com.sample.android.mapper.toUser
+import com.sample.android.ui.feature.detail.model.DetailEffect
+import com.sample.android.ui.feature.detail.model.DetailIntent
+import com.sample.android.ui.feature.detail.model.DetailState
 import com.sample.android.ui.feature.main.model.UserUiData
 import com.sample.android.ui.feature.main.model.like
 import com.sample.android.ui.feature.main.model.unlike
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
@@ -22,72 +23,112 @@ class DetailViewModel @Inject constructor(
     private val addToFavoritesUseCase: AddToFavoritesUseCase,
     private val removeFromFavoritesUseCase: RemoveFromFavoritesUseCase
 ) : ViewModel() {
-    private val _currentList = mutableListOf<UserUiData>()
-    val currentList
-        get() = _currentList.toList()
-    private val _currentData = MutableSharedFlow<UserUiData>()
-    val currentData = _currentData.asSharedFlow()
 
-    private val _isChangedFavorite = MutableStateFlow(false)
-    val isChangedFavorite = _isChangedFavorite.asStateFlow()
+    private val _state = MutableStateFlow(DetailState())
+    val state = _state.asStateFlow()
 
-    fun setUiData(list: List<UserUiData>) {
-        _currentList.clear()
-        _currentList.addAll(list)
-    }
-
-    fun setCurrentData(position: Int) {
-        viewModelScope.launch {
-            val data = _currentList.getOrNull(position) ?: return@launch
-            _currentData.emit(data)
-        }
-    }
+    private val _effect = MutableStateFlow<DetailEffect?>(null)
+    val effect = _effect.asStateFlow()
 
     private val favoriteLock = AtomicBoolean(false)
 
-    fun unlikeFavoriteData(userUiData: UserUiData) {
+    fun handleIntent(intent: DetailIntent) {
+        when (intent) {
+            is DetailIntent.Initialize -> initializeData(intent.selectedList)
+            is DetailIntent.SetCurrentPosition -> setCurrentPosition(intent.position)
+            is DetailIntent.ToggleFavorite -> toggleFavorite(intent.userUiData)
+        }
+    }
+
+    private fun initializeData(selectedList: List<UserUiData>) {
+        _state.value = _state.value.copy(
+            selectedList = selectedList,
+            currentData = selectedList.firstOrNull()
+        )
+    }
+
+    private fun setCurrentPosition(position: Int) {
+        val currentData = _state.value.selectedList.getOrNull(position)
+        _state.value = _state.value.copy(currentData = currentData)
+    }
+
+    private fun toggleFavorite(userUiData: UserUiData) {
+        if (userUiData.isFavorite) {
+            unlikeFavorite(userUiData)
+        } else {
+            likeFavorite(userUiData)
+        }
+    }
+
+    private fun unlikeFavorite(userUiData: UserUiData) {
         viewModelScope.launch {
             if (favoriteLock.getAndSet(true)) {
                 return@launch
             }
+
+            _state.value = _state.value.copy(isLoading = true)
+
             try {
                 val user = userUiData.data.toUser()
                 removeFromFavoritesUseCase(user)
 
-                val list = _currentList.unlike(userUiData)
-                _currentList.clear()
-                _currentList.addAll(list)
+                val updatedList = _state.value.selectedList.unlike(userUiData)
+                val updatedCurrentData = userUiData.copy(isFavorite = false)
 
-                val unlikedData = userUiData.copy(isFavorite = false)
-                _currentData.emit(unlikedData)
+                _state.value = _state.value.copy(
+                    selectedList = updatedList,
+                    currentData = updatedCurrentData,
+                    isLoading = false
+                )
 
-                _isChangedFavorite.emit(true)
+                _effect.value = DetailEffect.FavoriteChanged
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = e.message
+                )
+                _effect.value = DetailEffect.ShowError(e.message)
             } finally {
                 favoriteLock.set(false)
             }
         }
     }
 
-    fun likeFavoriteData(userUiData: UserUiData) {
+    private fun likeFavorite(userUiData: UserUiData) {
         viewModelScope.launch {
             if (favoriteLock.getAndSet(true)) {
                 return@launch
             }
+
+            _state.value = _state.value.copy(isLoading = true)
+
             try {
                 val user = userUiData.data.toUser()
                 addToFavoritesUseCase(user)
 
-                val list = _currentList.like(userUiData)
-                _currentList.clear()
-                _currentList.addAll(list)
+                val updatedList = _state.value.selectedList.like(userUiData)
+                val updatedCurrentData = userUiData.copy(isFavorite = true)
 
-                val likedData = userUiData.copy(isFavorite = true)
-                _currentData.emit(likedData)
+                _state.value = _state.value.copy(
+                    selectedList = updatedList,
+                    currentData = updatedCurrentData,
+                    isLoading = false
+                )
 
-                _isChangedFavorite.emit(true)
+                _effect.value = DetailEffect.FavoriteChanged
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = e.message
+                )
+                _effect.value = DetailEffect.ShowError(e.message)
             } finally {
                 favoriteLock.set(false)
             }
         }
+    }
+
+    fun clearEffect() {
+        _effect.value = null
     }
 }
