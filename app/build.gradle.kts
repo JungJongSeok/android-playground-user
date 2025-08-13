@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.jacoco)
     alias(libs.plugins.hilt)
-    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -60,21 +60,68 @@ android {
     }
 }
 
-private val modules = listOf("app", "network", "data", "domain")
+private val modules =
+    listOf("app", "network", "data", "domain")
+private val featureModules =
+    listOf("feature:main", "feature:detail", "feature:core")
+private val featureModulePaths =
+    listOf("feature/main", "feature/detail", "feature/core")
+
 tasks.register("jacocoTestReport") {
     group = "verification"
     description = "Runs all unit tests to generate .exec files"
 
-    dependsOn(modules.map { ":$it:testDebugUnitTest" })
+    val allModuleTasks = modules.map { ":$it:testDebugUnitTest" } +
+        featureModules.map { ":$it:testDebugUnitTest" }
+
+    dependsOn(allModuleTasks)
     finalizedBy("jacocoTestReportMerged")
 }
 
 tasks.register<JacocoReport>("jacocoTestReportMerged") {
     val execFiles = modules.map {
         file("$rootDir/$it/build/jacoco/testDebugUnitTest.exec")
+    } + featureModulePaths.map {
+        file("$rootDir/$it/build/jacoco/testDebugUnitTest.exec")
     }
 
     val classDirs = modules.map {
+        fileTree("$rootDir/$it/build/tmp/kotlin-classes/debug") {
+            exclude(
+                "**/R.class",
+                "**/R$*.class",
+                "**/BuildConfig.*",
+                "**/Manifest*.*",
+                "**/*Test*.*",
+                "**/Hilt_*.class",
+                "**/*_HiltModules*.class",
+                "**/*_ComponentTreeDeps*.class",
+                "**/*_MembersInjector*.class",
+                "**/*_Factory*.class",
+                "**/*_Provide*.class",
+                "**/AutoValue_*.class",
+                "**/Dagger*.class",
+                "**/*Module_*.class",
+                "**/*_Impl.class",
+                "**/*Database_Impl*.class",
+                "**/*Composable*.class",
+                "**/*\$Companion.class",
+                "**/*\$WhenMappings.class",
+                "**/ComposableSingletons\$*.class",
+                "**/*\$\$serializer.class",
+                "**/LiveLiterals\$*.class",
+                "**/*\$DefaultImpls.class",
+                "**/*\$\$Lambda\$*.class",
+                "**/synthetic/**",
+                "**/*\$\$internal\$*.class",
+                "**/*Activity.class",
+                "**/*Activity*.class",
+                "**/*di*",
+                "**/*Kt.class",
+                "**/*Kt*.class",
+            )
+        }
+    } + featureModulePaths.map {
         fileTree("$rootDir/$it/build/tmp/kotlin-classes/debug") {
             exclude(
                 "**/R.class",
@@ -117,6 +164,11 @@ tasks.register<JacocoReport>("jacocoTestReportMerged") {
             file("$rootDir/$it/src/main/java"),
             file("$rootDir/$it/src/main/kotlin")
         )
+    } + featureModulePaths.flatMap {
+        listOf(
+            file("$rootDir/$it/src/main/java"),
+            file("$rootDir/$it/src/main/kotlin")
+        )
     }
 
     executionData.setFrom(files(execFiles))
@@ -126,7 +178,7 @@ tasks.register<JacocoReport>("jacocoTestReportMerged") {
     reports {
         html.required.set(true)
         xml.required.set(true)
-        html.outputLocation.set(file("$buildDir/reports/jacoco/html"))
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/html"))
     }
 }
 
@@ -155,7 +207,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
 
     implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
     debugImplementation(libs.androidx.ui.tooling)
@@ -164,11 +216,6 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":data"))
     implementation(project(":network"))
-
-    testImplementation(libs.junit)
-    testImplementation(libs.mockk)
-    testImplementation(libs.kotlin.coroutines.test)
-    testImplementation(libs.okhttp3.mockwebserver)
-    testImplementation(libs.robolectric)
-    testImplementation(project(":data"))
+    implementation(project(":feature:main"))
+    implementation(project(":feature:detail"))
 }
