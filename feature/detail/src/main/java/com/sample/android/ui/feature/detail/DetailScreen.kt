@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sample.android.feature.detail.R
 import com.sample.android.ui.feature.detail.component.DetailAppBar
 import com.sample.android.ui.feature.detail.component.DetailImagePager
@@ -32,8 +33,8 @@ fun DetailRouter(
     viewModel: DetailViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val state by viewModel.state.collectAsState()
-    val effect by viewModel.effect.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val effect by viewModel.effect.collectAsStateWithLifecycle()
 
     val pagerState = rememberPagerState(
         initialPage = initialPosition,
